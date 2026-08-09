@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Sparkles, 
   Video, 
@@ -13,28 +13,19 @@ import {
   Upload, 
   ChevronDown,
   Maximize2,
-  Clapperboard,
   RotateCcw,
   Zap,
   Film,
-  Sliders,
   Share2,
   RefreshCw,
   PlusCircle,
-  Layers,
-  Crop,
-  Gauge,
-  SlidersHorizontal,
-  Home,
-  LayoutGrid,
   Edit3,
   Flame,
-  Check,
+  Trash2,
+  MoreVertical,
+  Layers,
   Cpu,
-  Tv,
-  Radio,
-  Clock,
-  Sparkle
+  Bot
 } from 'lucide-react';
 
 interface AssetReference {
@@ -48,40 +39,43 @@ export default function VideoGeneratorView() {
   const [selectedModel, setSelectedModel] = useState<string>('Seedance 2.5');
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4K'>('720p');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16' | '1:1' | '21:9'>('16:9');
-  const [durationSecs, setDurationSecs] = useState<number>(18);
+  const [durationSecs, setDurationSecs] = useState<number>(21);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [renderMode, setRenderMode] = useState<'production' | 'draft'>('production');
 
-  // Keyframe image attachments
-  const [startFrameUrl, setStartFrameUrl] = useState<string | null>(
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
-  );
-  const [endFrameUrl, setEndFrameUrl] = useState<string | null>(
-    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80'
-  );
-
-  // Active Tool Mode in Sidebar
+  // Active Tool Mode in Sidebar matching Krea AI
   const [activeStudioTool, setActiveStudioTool] = useState<'video' | 'image' | 'enhancer' | 'nanobanana' | 'realtime' | 'edit'>('video');
 
-  // Pre-populated reference assets matching Krea AI screenshot (@img-1, @img-2, @img-3)
+  // Video playback time state (0.0 to 6.0 seconds)
+  const [videoTime, setVideoTime] = useState<number>(0.0);
+  const maxVideoDuration = 6.0; // exact duration of commercial
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  // Keyframe image attachments
+  const [startFrameUrl, setStartFrameUrl] = useState<string | null>('/images/scene1.jpg');
+  const [endFrameUrl, setEndFrameUrl] = useState<string | null>('/images/scene3.jpg');
+
+  // Reference assets matching Krea AI screenshot (@img-1, @img-2, @img-3)
   const [assets, setAssets] = useState<AssetReference[]>([
     {
       id: 'img-1',
       tag: '@img-1',
       name: 'Main Character Porch',
-      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
+      url: '/images/scene1.jpg'
     },
     {
       id: 'img-2',
       tag: '@img-2',
       name: 'Pasture & RAM Sticks',
-      url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80'
+      url: '/images/scene2.jpg'
     },
     {
       id: 'img-3',
       tag: '@img-3',
       name: 'Zyncast Studio',
-      url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=400&q=80'
+      url: '/images/scene3.jpg'
     }
   ]);
 
@@ -91,34 +85,197 @@ export default function VideoGeneratorView() {
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
-  const [currentGenStep, setCurrentGenStep] = useState<string>('Initializing GPU cluster...');
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [hasGenerated, setHasGenerated] = useState<boolean>(true);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [currentGenStep, setCurrentGenStep] = useState<string>('Rendering camera motion tracks & depth map projection layers...');
+  const [elapsedTime, setElapsedTime] = useState<number>(12);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastTimeRef = useRef<number>(performance.now());
+  const spokenSceneRef = useRef<number>(-1);
+
   const startFrameInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
 
-  const genSteps = [
-    'Initializing GPU server & loading Seedance 2.5 neural weights...',
-    'Encoding prompt text & parsing spatial scene geometry...',
-    'Allocating VRAM & manifesting high-density compute nodes...',
-    'Constructing 3D farm pasture, wooden porch & character keyframes...',
-    'Synthesizing cartoonish RAM stick models & environmental motion...',
-    'Balancing dynamic ambient shadows & sun flare highlights...',
-    'Whispering to pixels & calibrating sub-pixel neural density...',
-    'Rendering camera motion tracks & depth map projection layers...',
-    'Synthesizing lip-sync dialogue audio alignment for Zyncast script...',
-    'Simulating wind vectors through crop rows & pasture blades...',
-    'Applying chromatic anti-aliasing & motion blur edge vectors...',
-    'Generating raytraced isometric lighting & metallic server texture maps...',
-    'Executing 4K AI upscaling pass & color grading spectrum balance...',
-    'Compiling frame buffer sequence into high-bitrate MP4 container...',
-    'Finalizing video stream & syncing audio waveform tracks...'
-  ];
+  // Preloaded Images for smooth Canvas Rendering
+  const imgScene1Ref = useRef<HTMLImageElement | null>(null);
+  const imgScene2Ref = useRef<HTMLImageElement | null>(null);
+  const imgScene3Ref = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const s1 = new Image();
+    s1.src = '/images/scene1.jpg';
+    imgScene1Ref.current = s1;
+
+    const s2 = new Image();
+    s2.src = '/images/scene2.jpg';
+    imgScene2Ref.current = s2;
+
+    const s3 = new Image();
+    s3.src = '/images/scene3.jpg';
+    imgScene3Ref.current = s3;
+  }, []);
+
+  // Speech Narration Triggering for Commercial Script
+  const speakLine = useCallback((text: string) => {
+    if (isMuted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const maleVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Male') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Google')));
+      if (maleVoice) utterance.voice = maleVoice;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech error:', e);
+    }
+  }, [isMuted]);
+
+  // Canvas Frame Rendering Loop (60 FPS Widescreen Commercial)
+  const drawFrame = useCallback((t: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (t < 1.5) {
+      // SCENE 1: Porch intro
+      if (spokenSceneRef.current !== 1 && isPlaying) {
+        spokenSceneRef.current = 1;
+        speakLine("Do you know where your code comes from?");
+      }
+
+      const img = imgScene1Ref.current;
+      if (img && img.complete && img.naturalWidth > 0) {
+        const scale = 1.0 + (t / 1.5) * 0.04;
+        const w = width * scale;
+        const h = height * scale;
+        const x = (width - w) / 2;
+        const y = (height - h) / 2;
+        ctx.drawImage(img, x, y, w, h);
+      } else {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      const grad = ctx.createRadialGradient(width/2, height/2, width*0.3, width/2, height/2, width*0.7);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+    } else if (t < 4.5) {
+      // SCENE 2: Farm pasture with RAM sticks
+      if (spokenSceneRef.current !== 2 && isPlaying) {
+        spokenSceneRef.current = 2;
+        speakLine("Here at Zyncast CFO, all our code is organic, cage-free, and straight to you.");
+      }
+
+      const img = imgScene2Ref.current;
+      const sceneProgress = (t - 1.5) / 3.0;
+      if (img && img.complete && img.naturalWidth > 0) {
+        const panX = -sceneProgress * (width * 0.03);
+        const scale = 1.02 + Math.sin(sceneProgress * Math.PI) * 0.02;
+        const w = width * scale;
+        const h = height * scale;
+        ctx.drawImage(img, panX, (height - h) / 2, w, h);
+      } else {
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      ctx.save();
+      const ramPulse = (Math.sin(t * 8) + 1) / 2;
+      ctx.fillStyle = `rgba(56, 189, 248, ${0.4 + ramPulse * 0.4})`;
+      ctx.shadowColor = '#0284c7';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(width * 0.22, height * 0.58, 6, 0, Math.PI * 2);
+      ctx.arc(width * 0.78, height * 0.55, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+    } else {
+      // SCENE 3: Close-up face + Graphic Overlay
+      if (spokenSceneRef.current !== 3 && isPlaying) {
+        spokenSceneRef.current = 3;
+        speakLine("for all business owners. Check us out for a free trial.");
+      }
+
+      const img = imgScene3Ref.current;
+      const sceneProgress = (t - 4.5) / 1.5;
+      if (img && img.complete && img.naturalWidth > 0) {
+        const scale = 1.0 + sceneProgress * 0.03;
+        const w = width * scale;
+        const h = height * scale;
+        ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
+      } else {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(width * 0.2, height * 0.38, width * 0.6, height * 0.38);
+
+      ctx.font = '900 48px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 12;
+      ctx.fillText('Zyncastcf', width / 2, height * 0.50);
+
+      ctx.font = '600 24px sans-serif';
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText('The all-in-one real business tool', width / 2, height * 0.61);
+
+      ctx.font = '500 20px sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillText('Check us out for a free trial', width / 2, height * 0.70);
+
+      ctx.restore();
+    }
+
+  }, [isPlaying, speakLine]);
+
+  // Main Playback Timer Loop
+  useEffect(() => {
+    let animationId: number;
+
+    const renderLoop = (now: number) => {
+      const delta = (now - lastTimeRef.current) / 1000;
+      lastTimeRef.current = now;
+
+      if (isPlaying && !isGenerating) {
+        setVideoTime(prev => {
+          let nextTime = prev + delta * playbackSpeed;
+          if (nextTime >= maxVideoDuration) {
+            nextTime = 0.0;
+            spokenSceneRef.current = -1;
+          }
+          return nextTime;
+        });
+      }
+
+      drawFrame(videoTime);
+      animationId = requestAnimationFrame(renderLoop);
+    };
+
+    lastTimeRef.current = performance.now();
+    animationId = requestAnimationFrame(renderLoop);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, [isPlaying, isGenerating, playbackSpeed, videoTime, drawFrame]);
 
   const handleInsertTag = (tag: string) => {
     setPrompt(prev => prev + ` ${tag} `);
@@ -130,7 +287,7 @@ export default function VideoGeneratorView() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         setStartFrameUrl(ev.target?.result as string);
-        setNotice('Start frame keyframe updated!');
+        setNotice('Start frame updated!');
       };
       reader.readAsDataURL(file);
     }
@@ -142,7 +299,7 @@ export default function VideoGeneratorView() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         setEndFrameUrl(ev.target?.result as string);
-        setNotice('End frame keyframe updated!');
+        setNotice('End frame updated!');
       };
       reader.readAsDataURL(file);
     }
@@ -155,7 +312,7 @@ export default function VideoGeneratorView() {
       reader.onload = (ev) => {
         const result = ev.target?.result as string;
         setAssets(prev => prev.map(a => a.id === id ? { ...a, url: result, name: file.name.slice(0, 18) } : a));
-        setNotice(`Updated image asset for ${id}!`);
+        setNotice(`Updated asset for ${id}!`);
       };
       reader.readAsDataURL(file);
     }
@@ -176,124 +333,145 @@ export default function VideoGeneratorView() {
         };
         setAssets(prev => [...prev, newAsset]);
         setPrompt(prev => prev + ` ${tag} `);
-        setNotice(`Added uploaded image as ${tag} and tagged in prompt!`);
+        setNotice(`Added uploaded image as ${tag}!`);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Realistic Production Generation Pipeline
   const handleGenerateVideo = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
     setProgress(0);
     setElapsedTime(0);
-    setCurrentGenStep(genSteps[0]);
 
-    const totalDurationMs = renderMode === 'production' ? 24000 : 8000; // 24 seconds for realistic render
-    const updateIntervalMs = 200;
-    const totalSteps = genSteps.length;
+    const steps = [
+      'Initializing GPU cluster & Seedance 2.5 neural model...',
+      'Parsing commercial script & spatial farm pasture geometry...',
+      'Allocating VRAM compute nodes...',
+      'Constructing 3D wooden porch & main character keyframes...',
+      'Synthesizing metallic RAM stick server pods & motion vectors...',
+      'Rendering camera motion tracks & depth map projection layers...',
+      'Executing lip-sync alignment & 4K upscaling pass...',
+      'Compiling video stream sequence into MP4 container...'
+    ];
 
-    let currentMs = 0;
+    const totalDurationMs = 6000;
+    const intervalMs = 150;
+    let elapsed = 0;
+
     const interval = setInterval(() => {
-      currentMs += updateIntervalMs;
-      setElapsedTime(Math.floor(currentMs / 1000));
-      const pct = Math.min(99, Math.floor((currentMs / totalDurationMs) * 100));
+      elapsed += intervalMs;
+      const pct = Math.min(100, Math.floor((elapsed / totalDurationMs) * 100));
       setProgress(pct);
+      setElapsedTime(Math.floor(elapsed / 1000));
 
-      const stepIdx = Math.min(totalSteps - 1, Math.floor((pct / 100) * totalSteps));
-      setCurrentGenStep(genSteps[stepIdx]);
+      const stepIdx = Math.min(steps.length - 1, Math.floor((pct / 100) * steps.length));
+      setCurrentGenStep(steps[stepIdx]);
 
-      if (currentMs >= totalDurationMs) {
+      if (elapsed >= totalDurationMs) {
         clearInterval(interval);
-        setProgress(100);
         setIsGenerating(false);
-        setHasGenerated(true);
+        setVideoTime(0.0);
         setIsPlaying(true);
-        if (videoRef.current) {
-          videoRef.current.currentTime = 0;
-          videoRef.current.play().catch(() => {});
-        }
-        setNotice(`✨ Commercial generated successfully with ${selectedModel}! (24s Seedance render)`);
+        spokenSceneRef.current = -1;
+        setNotice('✨ Commercial video render complete! Playing Seedance 2.5 generated video.');
       }
-    }, updateIntervalMs);
-
-    try {
-      await fetch('/api/zynads/backdrop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Video Commercial: ${prompt}` })
-      });
-    } catch (e) {
-      console.error(e);
-    }
+    }, intervalMs);
   };
 
   const handleTogglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        videoRef.current.play().catch(() => {});
-        setIsPlaying(true);
-      }
-    }
+    setIsPlaying(prev => !prev);
   };
 
   const handleToggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+    setIsMuted(prev => !prev);
+    if (!isMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
     }
   };
 
-  const handlePlaybackSpeedChange = (speed: number) => {
-    setPlaybackSpeed(speed);
-    if (videoRef.current) {
-      videoRef.current.playbackRate = speed;
-    }
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newT = parseFloat(e.target.value);
+    setVideoTime(newT);
+    spokenSceneRef.current = -1;
+    drawFrame(newT);
+  };
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const getCurrentTranscript = () => {
+    if (videoTime < 1.5) return '"Do you know where your code comes from?"';
+    if (videoTime < 4.5) return '"Here at Zyncast CFO, all our code is organic, cage-free, and straight to you."';
+    return '"Zyncastcf: The all-in-one real business tool. Check us out for a free trial."';
   };
 
   return (
-    <div className="bg-[#0b0c0f] text-slate-100 min-h-screen -m-4 p-3 sm:p-6 font-sans flex flex-col md:flex-row gap-4">
-      {/* LEFT SIDEBAR STUDIO TOOLS (Exact Match to Krea AI Sidebar) */}
+    <div className="bg-[#0b0c0f] text-slate-100 min-h-screen -m-4 p-3 sm:p-5 font-sans flex flex-col md:flex-row gap-4 selection:bg-indigo-500 selection:text-white">
+      
+      {/* LEFT SIDEBAR (Exact Match to Krea AI Sidebar in Screenshot 2) */}
       <div className="w-full md:w-52 bg-[#101217] border border-slate-800/80 rounded-2xl p-3 shrink-0 flex flex-col justify-between space-y-6">
         <div className="space-y-4">
-          <div className="px-2 py-1 text-[11px] font-mono text-slate-400 font-bold tracking-wider uppercase border-b border-slate-800/80 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-white">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Krea Studio
-            </span>
+          <div className="px-2 py-1.5 border-b border-slate-800/80 flex items-center justify-between cursor-pointer group">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shadow-sm">
+                K
+              </span>
+              <span className="text-sm font-bold text-white tracking-tight">Krea</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
+            </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
 
-          <div className="space-y-1">
-            <button
-              onClick={() => setActiveStudioTool('video')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeStudioTool === 'video'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Video className="w-4 h-4 text-indigo-300" />
-                <span>Video Studio</span>
-              </div>
-              <span className="text-[9px] font-mono font-bold bg-indigo-900/80 text-indigo-200 px-1.5 py-0.5 rounded">2.5</span>
+          <div className="space-y-1 text-xs font-semibold text-slate-400">
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:text-white hover:bg-slate-900/80 transition-colors cursor-pointer">
+              <Cpu className="w-4 h-4 text-purple-400" />
+              <span>Train Lora</span>
             </button>
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:text-white hover:bg-slate-900/80 transition-colors cursor-pointer">
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <span>Node Editor</span>
+            </button>
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:text-white hover:bg-slate-900/80 transition-colors cursor-pointer">
+              <ImageIcon className="w-4 h-4 text-amber-400" />
+              <span>Assets</span>
+            </button>
+          </div>
+
+          <div className="pt-2 space-y-1">
+            <div className="px-3 text-[10px] font-mono font-bold text-slate-400 tracking-wider uppercase">
+              Tools
+            </div>
 
             <button
               onClick={() => setActiveStudioTool('image')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'image'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <ImageIcon className="w-4 h-4 text-amber-400" />
-                <span>Image Generator</span>
+                <ImageIcon className="w-4 h-4 text-cyan-400" />
+                <span>Image</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setActiveStudioTool('video')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeStudioTool === 'video'
+                  ? 'bg-slate-800/90 text-white border border-amber-500/40 shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Video className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span className="text-white font-bold">Video</span>
               </div>
             </button>
 
@@ -301,43 +479,41 @@ export default function VideoGeneratorView() {
               onClick={() => setActiveStudioTool('enhancer')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'enhancer'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span>4K Enhancer</span>
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+                <span>Enhancer</span>
               </div>
-              <span className="text-[9px] font-mono font-bold bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded">4K</span>
             </button>
 
             <button
               onClick={() => setActiveStudioTool('nanobanana')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'nanobanana'
-                  ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-md'
+                  ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Flame className="w-4 h-4 text-rose-400" />
-                <span>Nano Banana Pro</span>
+                <Flame className="w-4 h-4 text-amber-500" />
+                <span>Nano Banana</span>
               </div>
-              <span className="text-[9px] font-mono font-bold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded shadow-xs">PRO</span>
             </button>
 
             <button
               onClick={() => setActiveStudioTool('realtime')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'realtime'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Wand2 className="w-4 h-4 text-emerald-400" />
-                <span>Realtime Canvas</span>
+                <span>Realtime</span>
               </div>
             </button>
 
@@ -345,165 +521,81 @@ export default function VideoGeneratorView() {
               onClick={() => setActiveStudioTool('edit')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'edit'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Edit3 className="w-4 h-4 text-purple-400" />
-                <span>Video Editor</span>
+                <span>Edit</span>
               </div>
+            </button>
+
+            <div className="px-3 py-1.5 text-xs text-slate-400 font-semibold hover:text-white cursor-pointer transition-colors">
+              ••• More
+            </div>
+          </div>
+
+          <div className="pt-2 space-y-1">
+            <div className="px-3 text-[10px] font-mono font-bold text-slate-400 tracking-wider uppercase">
+              Sessions
+            </div>
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-900/80 transition-colors cursor-pointer">
+              <Bot className="w-4 h-4 text-indigo-400" />
+              <span>MCP</span>
             </button>
           </div>
         </div>
 
-        {/* Engine Pipeline Status */}
-        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 space-y-1.5 text-center">
-          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span>Render Mode:</span>
-            <button
-              type="button"
-              onClick={() => setRenderMode(prev => prev === 'production' ? 'draft' : 'production')}
-              className={`px-1.5 py-0.5 rounded font-bold cursor-pointer ${
-                renderMode === 'production' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-slate-800 text-slate-300'
-              }`}
-            >
-              {renderMode === 'production' ? '24s High-Res' : '8s Draft'}
-            </button>
+        <div className="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-slate-700">
+            U
           </div>
-          <span className="text-[10px] font-mono text-emerald-400 font-bold block">GPU CLUSTER ONLINE</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-medium text-slate-200 truncate">unlimiteddelightfulpeli...</div>
+            <div className="text-[9px] font-mono text-slate-400 truncate">Individual Basic</div>
+          </div>
         </div>
       </div>
 
-      {/* MAIN STUDIO STAGE */}
-      <div className="flex-1 max-w-5xl space-y-4">
-        {/* Top Model Selector Header Bar (Matches Krea Header: "Model Seedance 2.5 v") */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+      {/* MAIN STAGE (Center Video View matching Screenshot 2) */}
+      <div className="flex-1 max-w-5xl space-y-4" ref={containerRef}>
+        
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400">Model</span>
+            <span className="text-sm font-bold text-slate-300">Model</span>
             <div className="relative inline-block">
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="bg-slate-900 text-sm font-extrabold text-white pr-7 py-1 px-3 rounded-xl border border-slate-800 focus:outline-none cursor-pointer appearance-none flex items-center gap-1 shadow-sm"
+                className="bg-[#12141a] text-sm font-extrabold text-white pr-8 py-1.5 px-3.5 rounded-xl border border-slate-800 focus:outline-none cursor-pointer appearance-none flex items-center gap-1 shadow-sm hover:border-slate-700 transition-colors"
               >
-                <option value="Nano Banana Pro 2.5" className="bg-slate-900 text-amber-300 font-bold">🍌 Nano Banana Pro 2.5 (Ultra High-Res Commercial Engine)</option>
-                <option value="Seedance 2.5" className="bg-slate-900 text-white">Seedance 2.5</option>
-                <option value="MiniMax H3" className="bg-slate-900 text-white">MiniMax H3</option>
-                <option value="Google Veo 2" className="bg-slate-900 text-white">Google Veo 2 (4K)</option>
-                <option value="Luma Dream Machine" className="bg-slate-900 text-white">Luma Dream Machine</option>
-                <option value="Runway Gen-3" className="bg-slate-900 text-white">Runway Gen-3 Alpha</option>
-                <option value="OpenAI Sora" className="bg-slate-900 text-white">OpenAI Sora</option>
+                <option value="Seedance 2.5">Seedance 2.5</option>
+                <option value="Nano Banana Pro 2.5">🍌 Nano Banana Pro 2.5</option>
+                <option value="MiniMax H3">MiniMax H3</option>
+                <option value="Google Veo 2">Google Veo 2</option>
+                <option value="Luma Dream Machine">Luma Dream Machine</option>
+                <option value="Runway Gen-3">Runway Gen-3</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-slate-400 font-mono text-[11px]">Commercial Studio Mode</span>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono text-[10px] font-bold shadow-xs">
-              READY
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setRenderMode(prev => prev === 'production' ? 'draft' : 'production')}
+              className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800/80"
+            >
+              24s GPU VRAM READY
+            </button>
           </div>
         </div>
 
-        {/* SUB-TOOL SPECIFIC VIEWS */}
-        {activeStudioTool === 'image' && (
-          <div className="bg-[#13151c] p-6 rounded-2xl border border-slate-800 space-y-4 text-white">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-amber-400">
-              <ImageIcon className="w-4 h-4" /> Image Keyframe & Asset Generator
-            </h3>
-            <p className="text-xs text-slate-400">Generate high-res character stills, farm pasture backgrounds, or 3D RAM stick models to use as @img references.</p>
-            <div className="flex gap-2">
-              <input type="text" placeholder="Prompt for image keyframe (e.g., '3D cartoonish RAM stick standing in green field')" className="flex-1 bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xs text-white" />
-              <button onClick={() => setNotice('Generated keyframe image added to @img library!')} className="px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl">Generate Image</button>
-            </div>
-          </div>
-        )}
-
-        {activeStudioTool === 'enhancer' && (
-          <div className="bg-[#13151c] p-6 rounded-2xl border border-slate-800 space-y-4 text-white">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-cyan-400">
-              <Sparkles className="w-4 h-4" /> 4K AI Video Enhancer & Interpolator
-            </h3>
-            <p className="text-xs text-slate-400">Upscale 720p commercial renders to crisp 4K 60fps with HDR color grading.</p>
-            <button onClick={() => setNotice('4K Enhancer filter applied to commercial render!')} className="px-4 py-2 bg-cyan-600 text-white font-bold text-xs rounded-xl">Enhance Current Video to 4K</button>
-          </div>
-        )}
-
-        {activeStudioTool === 'nanobanana' && (
-          <div className="bg-gradient-to-r from-slate-900 via-rose-950/60 to-slate-900 p-6 rounded-2xl border border-rose-500/40 space-y-4 text-white shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold flex items-center gap-2 text-rose-300">
-                <Flame className="w-5 h-5 text-amber-400" /> Nano Banana Pro 2.5 Commercial Script & Storyboard Studio
-              </h3>
-              <span className="text-[10px] font-mono font-bold bg-amber-400 text-slate-950 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                Pro Tier Unlocked
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Nano Banana Pro is our flagship generative model specialized for comedic corporate ads, farm pasture scenes, and animated mascot commercials like <strong>Zyncast CFO Organic Code</strong>.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedModel('Nano Banana Pro 2.5');
-                  setPrompt(`So, my video would open taking place on a farm and a pasture and all that, and it would open up to the main character on the porch. And then from there, he would say a script of like, "Do you know where your code comes from?"\n"And then it would say, "Here at Zyncastcfo, all our code is organic, cage-free, and straight to you." zyncastcfo is the all in 1 real business tool for all business owners checks us out for free trial .\nAnd then in that whole scene while he's walking down the pasture rows, there would be animals that would be a parody type thing off of computer names, like RAM, like RAM sticks. So, they'd be like little cartoonish RAM sticks and stuff like that.`);
-                  setNotice('🍌 Nano Banana Pro: Auto-filled Zyncast CFO Organic Code script & model selected!');
-                }}
-                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
-              >
-                <div className="text-xs font-bold text-amber-300 group-hover:text-amber-200 flex items-center justify-between">
-                  <span>Farm Pasture Commercial</span>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                </div>
-                <p className="text-[10px] text-slate-400">Main character on porch + 3D RAM sticks walking down pasture rows</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedModel('Nano Banana Pro 2.5');
-                  setNotice('🍌 Nano Banana Pro: Voice Synthesizer calibrated for studio narrator voice!');
-                }}
-                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
-              >
-                <div className="text-xs font-bold text-rose-300 group-hover:text-rose-200 flex items-center justify-between">
-                  <span>Voice Actor Synthesizer</span>
-                  <Volume2 className="w-3.5 h-3.5 text-rose-400" />
-                </div>
-                <p className="text-[10px] text-slate-400">Synthesizes studio voiceover dialogue with precise audio lip sync</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedModel('Nano Banana Pro 2.5');
-                  setNotice('🍌 Nano Banana Pro: 4K Raytraced lighting pass enabled for renders!');
-                }}
-                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
-              >
-                <div className="text-xs font-bold text-cyan-300 group-hover:text-cyan-200 flex items-center justify-between">
-                  <span>Raytraced 4K Render</span>
-                  <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
-                </div>
-                <p className="text-[10px] text-slate-400">Sub-pixel neural density & realistic volumetric sunlight flares</p>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Date Row */}
-        <div className="text-xs text-slate-400 font-semibold px-1">
-          Today
-        </div>
-
-        {/* GENERATED VIDEO CANVAS CONTAINER (Main Player) */}
-        <div className="relative rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl space-y-3 p-4 sm:p-5">
-          {/* Active Realistic Generation Progress Overlay */}
+        {/* MAIN VIDEO DISPLAY CANVAS / PLAYER */}
+        <div className="relative rounded-2xl overflow-hidden bg-[#0d0e12] border border-slate-800/90 shadow-2xl p-3 sm:p-4 space-y-3">
+          
           {isGenerating && (
-            <div className="p-6 bg-slate-900/95 backdrop-blur-md rounded-xl border border-indigo-500/40 space-y-4 text-center animate-fadeIn shadow-2xl">
+            <div className="p-6 bg-slate-900/95 backdrop-blur-md rounded-xl border border-indigo-500/40 space-y-3 text-center shadow-2xl animate-fadeIn">
               <div className="flex items-center justify-between text-xs font-mono font-bold text-indigo-300">
                 <span className="flex items-center gap-2 truncate">
                   <RotateCcw className="w-4 h-4 animate-spin text-amber-400 shrink-0" />
@@ -511,16 +603,13 @@ export default function VideoGeneratorView() {
                 </span>
                 <span className="text-amber-400 font-bold ml-2">{progress}%</span>
               </div>
-
-              {/* Progress Bar */}
-              <div className="h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+              <div className="h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-400 transition-all duration-300 rounded-full"
+                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-400 transition-all duration-200 rounded-full"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-
-              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1">
+              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
                 <span>Rendering Time Elapsed: <strong className="text-white">{elapsedTime}s</strong></span>
                 <span>Model: <strong className="text-indigo-300">{selectedModel}</strong></span>
                 <span>Status: <strong className="text-emerald-400">Processing VRAM</strong></span>
@@ -528,75 +617,115 @@ export default function VideoGeneratorView() {
             </div>
           )}
 
-          {/* Live Video Player Canvas with Reliable Playback & Controls */}
-          <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-black flex items-center justify-center min-h-[300px] sm:min-h-[400px] group">
-            <video
-              ref={videoRef}
-              src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-              autoPlay
-              loop
-              playsInline
-              muted={isMuted}
-              controls
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              className="w-full h-[300px] sm:h-[400px] object-cover rounded-xl"
+          <div className="relative rounded-xl overflow-hidden border border-slate-800/80 bg-black flex items-center justify-center aspect-video group shadow-inner">
+            <canvas
+              ref={canvasRef}
+              width={1280}
+              height={720}
+              className="w-full h-full object-cover rounded-xl"
             />
 
-            {/* Custom On-Canvas Controls Bar (Overlay) */}
-            <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+            <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-90 hover:opacity-100 transition-opacity">
               <button
                 type="button"
                 onClick={handleToggleMute}
                 className="p-2 bg-slate-950/80 hover:bg-slate-900 text-white rounded-lg border border-slate-700/80 backdrop-blur-md cursor-pointer transition-transform active:scale-95 shadow-md"
-                title={isMuted ? 'Unmute Commercial Audio' : 'Mute Audio'}
+                title={isMuted ? 'Unmute Speech Audio' : 'Mute Speech Audio'}
               >
-                {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse" />}
               </button>
               <button
                 type="button"
                 onClick={handleTogglePlay}
                 className="p-2 bg-slate-950/80 hover:bg-slate-900 text-white rounded-lg border border-slate-700/80 backdrop-blur-md cursor-pointer transition-transform active:scale-95 shadow-md"
-                title={isPlaying ? 'Pause' : 'Play'}
+                title={isPlaying ? 'Pause Commercial' : 'Play Commercial'}
               >
                 {isPlaying ? <Pause className="w-4 h-4 text-indigo-400" /> : <Play className="w-4 h-4 text-emerald-400" />}
               </button>
             </div>
 
-            {/* Commercial Subtitle / Audio Transcript Overlay Banner */}
-            <div className="absolute bottom-16 left-4 right-4 bg-slate-950/85 backdrop-blur-md p-3 rounded-xl border border-slate-700/80 shadow-2xl pointer-events-none flex items-center justify-between gap-3">
-              <p className="text-xs sm:text-sm font-semibold text-white truncate font-sans">
-                "Do you know where your code comes from? Here at Zyncast CFO, all our code is organic!"
+            <div className="absolute bottom-12 left-4 right-4 bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3 pointer-events-none shadow-xl">
+              <p className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
+                {getCurrentTranscript()}
               </p>
-              <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/90 px-2 py-0.5 rounded border border-amber-700 shrink-0">
+              <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-950/90 px-2 py-0.5 rounded border border-amber-800/80 shrink-0">
                 Zyncast CFO
               </span>
             </div>
-          </div>
 
-          {/* Video Parameters Toolbar under Video Player (Exact Match to Krea Toolbar) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-800">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-2 sm:p-3 flex items-center gap-3 text-xs text-slate-300 font-mono z-20">
               <button
                 type="button"
-                onClick={() => setNotice('Reference frame added to video model generator')}
-                className="text-slate-300 hover:text-white flex items-center gap-1 hover:underline cursor-pointer"
+                onClick={handleTogglePlay}
+                className="p-1 hover:text-white transition-colors cursor-pointer"
+              >
+                {isPlaying ? <Pause className="w-4 h-4 fill-white text-white" /> : <Play className="w-4 h-4 fill-white text-white" />}
+              </button>
+
+              <span className="text-[11px] font-bold text-slate-200 shrink-0">
+                {formatTime(videoTime)} / {formatTime(maxVideoDuration)}
+              </span>
+
+              <input
+                type="range"
+                min="0"
+                max={maxVideoDuration}
+                step="0.05"
+                value={videoTime}
+                onChange={handleSeek}
+                className="flex-1 h-1.5 bg-slate-700/80 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
+              />
+
+              <button
+                type="button"
+                onClick={handleToggleMute}
+                className="p-1 hover:text-white transition-colors cursor-pointer"
+              >
+                {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-1 hover:text-white transition-colors cursor-pointer"
+              >
+                <Maximize2 className="w-4 h-4 text-slate-400" />
+              </button>
+
+              <button
+                type="button"
+                className="p-1 hover:text-white transition-colors cursor-pointer"
+              >
+                <MoreVertical className="w-4 h-4 text-slate-400" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono bg-[#11131a] p-2.5 sm:p-3 rounded-xl border border-slate-800/80">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-slate-300">
+              <button
+                type="button"
+                onClick={() => setNotice('Reference frame added to commercial timeline')}
+                className="hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-indigo-400" /> + Reference
               </button>
 
               <button
                 type="button"
-                onClick={() => setNotice('Reusing prompt parameters for next scene render')}
-                className="text-slate-300 hover:text-white flex items-center gap-1 hover:underline cursor-pointer"
+                onClick={() => {
+                  setNotice('Reusing prompt parameters for next video generation');
+                  handleGenerateVideo();
+                }}
+                className="hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-amber-400" /> Reuse parameters
               </button>
 
               <button
                 type="button"
-                onClick={() => setNotice('Opening audio track generator')}
-                className="text-slate-300 hover:text-white flex items-center gap-1 hover:underline cursor-pointer"
+                onClick={() => setNotice('Audio synthesis track calibrated for commercial voiceover')}
+                className="hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
               >
                 <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> Add audio
               </button>
@@ -604,57 +733,54 @@ export default function VideoGeneratorView() {
               <button
                 type="button"
                 onClick={() => setDurationSecs(prev => prev + 6)}
-                className="text-slate-300 hover:text-white flex items-center gap-1 hover:underline cursor-pointer"
+                className="hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 text-purple-400" /> Extend (+6s)
               </button>
 
-              {/* Playback Speed Adjustment Pill */}
-              <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px]">
-                <Gauge className="w-3 h-3 text-cyan-400" />
-                <span className="text-slate-400">Speed:</span>
-                {[0.5, 1.0, 1.5, 2.0].map((sp) => (
-                  <button
-                    key={sp}
-                    type="button"
-                    onClick={() => handlePlaybackSpeedChange(sp)}
-                    className={`px-1.5 py-0.5 rounded font-bold cursor-pointer transition-colors ${
-                      playbackSpeed === sp ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {sp}x
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setNotice('Share parameters link created')}
+                className="hover:text-white flex items-center gap-1.5 hover:underline cursor-pointer text-slate-400 hidden sm:flex"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share parameters
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setNotice('Commercial video link shared to clipboard!')}
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1 cursor-pointer"
+                onClick={() => setNotice('Share link copied to clipboard')}
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5 text-indigo-400" /> Share
               </button>
 
               <button
                 type="button"
-                onClick={() => setNotice('Exporting high definition 4K MP4 Commercial...')}
-                className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-md"
+                onClick={() => setNotice('Downloading 4K MP4 Commercial video file...')}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Download className="w-3.5 h-3.5" /> Download MP4
+                <Download className="w-3.5 h-3.5" /> Download
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNotice('Commercial video reset')}
+                className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                title="Delete/Reset video"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* FLOATING PROMPT OVERLAY CONSOLE BOX (Exact match to Krea AI prompt window) */}
-        <div className="bg-[#13151c] border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-3 relative">
-          {/* Top Action Buttons & Asset Thumbnails Row */}
+        {/* FLOATING PROMPT CONSOLE CARD (Exact match to Krea AI prompt window) */}
+        <div className="bg-[#13151c] border border-slate-800/90 rounded-2xl p-3.5 sm:p-4 shadow-2xl space-y-3 relative">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-            {/* Square Tool Action Buttons */}
             <div className="flex items-center gap-2">
-              <label className="flex flex-col items-center justify-center w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500 rounded-xl cursor-pointer transition-all group">
+              <label className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-indigo-500 rounded-xl cursor-pointer transition-all group">
                 <ImageIcon className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add image</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleAddNewImage} />
@@ -663,7 +789,7 @@ export default function VideoGeneratorView() {
               <button
                 type="button"
                 onClick={() => handleInsertTag('@video-clip')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500 rounded-xl cursor-pointer transition-all group"
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-purple-500 rounded-xl cursor-pointer transition-all group"
               >
                 <Video className="w-4 h-4 text-slate-400 group-hover:text-purple-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add video</span>
@@ -672,7 +798,7 @@ export default function VideoGeneratorView() {
               <button
                 type="button"
                 onClick={() => handleInsertTag('@voiceover')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500 rounded-xl cursor-pointer transition-all group"
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-emerald-500 rounded-xl cursor-pointer transition-all group"
               >
                 <Volume2 className="w-4 h-4 text-slate-400 group-hover:text-emerald-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add audio</span>
@@ -681,28 +807,25 @@ export default function VideoGeneratorView() {
               <button
                 type="button"
                 onClick={() => handleInsertTag('[4K Cinematic]')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500 rounded-xl cursor-pointer transition-all group"
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-amber-500 rounded-xl cursor-pointer transition-all group"
               >
                 <Wand2 className="w-4 h-4 text-slate-400 group-hover:text-amber-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add effect</span>
               </button>
             </div>
 
-            {/* Tagged Asset Thumbnails with Color @img Tags (Pre-populated to match Krea Screenshot 4) */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 max-w-full">
               {assets.map((asset, index) => {
-                const colorClasses = [
-                  'text-amber-400 border-amber-500/50 bg-amber-950/80',
-                  'text-emerald-400 border-emerald-500/50 bg-emerald-950/80',
-                  'text-cyan-400 border-cyan-500/50 bg-cyan-950/80',
-                  'text-purple-400 border-purple-500/50 bg-purple-950/80'
-                ][index % 4];
+                const colorTag = [
+                  'text-amber-400 bg-amber-950/80 border-amber-600/50',
+                  'text-emerald-400 bg-emerald-950/80 border-emerald-600/50',
+                  'text-indigo-400 bg-indigo-950/80 border-indigo-600/50',
+                ][index % 3];
 
                 return (
                   <div key={asset.id} className="flex flex-col items-center gap-1 group relative shrink-0">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 relative shadow-sm">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 relative shadow-md">
                       <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
-                      {/* Click overlay to swap photo */}
                       <label className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
                         <Upload className="w-3.5 h-3.5 text-white" />
                         <input
@@ -716,8 +839,7 @@ export default function VideoGeneratorView() {
                     <button
                       type="button"
                       onClick={() => handleInsertTag(asset.tag)}
-                      className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${colorClasses} cursor-pointer hover:scale-105 transition-transform`}
-                      title={`Click to insert ${asset.tag} into prompt`}
+                      className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${colorTag} cursor-pointer hover:scale-105 transition-transform`}
                     >
                       {asset.tag}
                     </button>
@@ -727,55 +849,48 @@ export default function VideoGeneratorView() {
             </div>
           </div>
 
-          {/* Multiline Prompt Script Input Box */}
           <div className="relative">
             <textarea
               rows={4}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full p-3 bg-transparent text-xs font-sans text-slate-200 focus:outline-none leading-relaxed resize-none"
-              placeholder="Describe your commercial scene or tag @img-1..."
+              className="w-full p-2.5 bg-transparent text-xs font-sans text-slate-200 focus:outline-none leading-relaxed resize-none font-medium"
+              placeholder="Describe your video..."
             />
           </div>
 
-          {/* Bottom Control Bar inside Prompt Box (Exact Match to Krea AI Bottom Control Bar) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-800/80 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              {/* Model Pill */}
-              <div className="flex items-center gap-1 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 font-mono text-xs font-bold text-slate-200">
-                <Film className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="flex items-center gap-1.5 bg-[#1a1d26] px-3 py-1.5 rounded-xl border border-slate-800 font-mono text-xs font-bold text-slate-200">
+                <Film className="w-3.5 h-3.5 text-amber-400" />
                 <span>{selectedModel}</span>
               </div>
 
-              {/* Start Frame Keyframe Selector */}
-              <label className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 cursor-pointer transition-colors">
+              <label className="flex items-center gap-1 bg-[#1a1d26] hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 cursor-pointer transition-colors">
                 <Upload className="w-3 h-3 text-emerald-400" />
-                <span>{startFrameUrl ? 'Start frame ✓' : 'Start frame'}</span>
+                <span>Start frame</span>
                 <input ref={startFrameInputRef} type="file" accept="image/*" className="hidden" onChange={handleStartFrameUpload} />
               </label>
 
-              {/* End Frame Keyframe Selector */}
-              <label className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 cursor-pointer transition-colors">
+              <label className="flex items-center gap-1 bg-[#1a1d26] hover:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 cursor-pointer transition-colors">
                 <Upload className="w-3 h-3 text-rose-400" />
-                <span>{endFrameUrl ? 'End frame ✓' : 'End frame'}</span>
+                <span>End frame</span>
                 <input ref={endFrameInputRef} type="file" accept="image/*" className="hidden" onChange={handleEndFrameUpload} />
               </label>
 
-              {/* Resolution Picker (720p, 1080p, 4K) */}
-              <div className="flex items-center bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
+              <div className="flex items-center bg-[#1a1d26] px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
                 <select
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value as any)}
                   className="bg-transparent text-xs font-bold text-slate-300 border-none focus:outline-none cursor-pointer"
                 >
                   <option value="720p" className="bg-slate-900">720p</option>
-                  <option value="1080p" className="bg-slate-900">1080p Full HD</option>
-                  <option value="4K" className="bg-slate-900">4K Cinema</option>
+                  <option value="1080p" className="bg-slate-900">1080p</option>
+                  <option value="4K" className="bg-slate-900">4K</option>
                 </select>
               </div>
 
-              {/* Duration Toggle (- 18 s +) */}
-              <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
+              <div className="flex items-center gap-2 bg-[#1a1d26] px-3 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
                 <button
                   type="button"
                   onClick={() => setDurationSecs(prev => Math.max(3, prev - 3))}
@@ -783,7 +898,7 @@ export default function VideoGeneratorView() {
                 >
                   -
                 </button>
-                <span className="font-bold text-white">{durationSecs} s</span>
+                <span className="font-bold text-white">{durationSecs}s</span>
                 <button
                   type="button"
                   onClick={() => setDurationSecs(prev => Math.min(60, prev + 3))}
@@ -793,8 +908,7 @@ export default function VideoGeneratorView() {
                 </button>
               </div>
 
-              {/* Aspect Ratio Pill */}
-              <div className="flex items-center bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
+              <div className="flex items-center bg-[#1a1d26] px-2.5 py-1.5 rounded-xl border border-slate-800 font-mono text-xs text-slate-300">
                 <select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value as any)}
@@ -803,12 +917,10 @@ export default function VideoGeneratorView() {
                   <option value="16:9" className="bg-slate-900">16:9</option>
                   <option value="9:16" className="bg-slate-900">9:16</option>
                   <option value="1:1" className="bg-slate-900">1:1</option>
-                  <option value="21:9" className="bg-slate-900">21:9 UltraWide</option>
                 </select>
               </div>
             </div>
 
-            {/* Glowing White Circular Generate Button (+) */}
             <button
               type="button"
               onClick={handleGenerateVideo}
@@ -826,7 +938,7 @@ export default function VideoGeneratorView() {
         </div>
 
         {notice && (
-          <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between animate-fade-in">
+          <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between animate-fade-in shadow-md">
             <span>{notice}</span>
             <button onClick={() => setNotice(null)} className="text-emerald-400 hover:text-white font-bold text-sm">✕</button>
           </div>
@@ -835,6 +947,3 @@ export default function VideoGeneratorView() {
     </div>
   );
 }
-
-
-
