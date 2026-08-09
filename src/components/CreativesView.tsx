@@ -3,7 +3,8 @@ import { AdCreativeAsset } from '../types';
 import { INITIAL_CREATIVES } from '../data';
 import { 
   Plus, Copy, Check, Sparkles, Video, ExternalLink, MousePointer, Target,
-  Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2
+  Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2,
+  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX
 } from 'lucide-react';
 
 interface TransitionEffect {
@@ -57,6 +58,33 @@ export default function CreativesView() {
   ]);
 
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null);
+
+  // Dedicated Asset Preview & Trim Modal State
+  const [previewAsset, setPreviewAsset] = useState<AdCreativeAsset | null>(null);
+  const [trimStart, setTrimStart] = useState<number>(0.5);
+  const [trimEnd, setTrimEnd] = useState<number>(5.5);
+  const [totalAssetDuration] = useState<number>(8.0);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState<boolean>(true);
+  const [cropRatio, setCropRatio] = useState<'16:9' | '9:16' | '1:1' | '4:5'>('16:9');
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [addedTimelineNotice, setAddedTimelineNotice] = useState<string | null>(null);
+
+  const handleOpenPreviewModal = (asset: AdCreativeAsset) => {
+    setPreviewAsset(asset);
+    setTrimStart(0.5);
+    setTrimEnd(5.5);
+    setIsPreviewPlaying(true);
+  };
+
+  const handleAddToTimeline = () => {
+    if (!previewAsset) return;
+    const trimmedDuration = (trimEnd - trimStart).toFixed(1);
+    setAddedTimelineNotice(`🎬 Asset "${previewAsset.title}" trimmed (${trimStart.toFixed(1)}s - ${trimEnd.toFixed(1)}s = ${trimmedDuration}s) and added to Commercial Timeline!`);
+    setTimeout(() => {
+      setAddedTimelineNotice(null);
+      setPreviewAsset(null);
+    }, 2200);
+  };
 
   const transitions: TransitionEffect[] = [
     { id: 'cross-dissolve', name: 'Cross Dissolve', category: 'Smooth', duration: '0.8s', description: 'Elegant cinematic fade between commercial scenes' },
@@ -482,23 +510,229 @@ export default function CreativesView() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => handleCopy(`${creative.headline}\n${creative.bodyText}`, creative.id)}
-                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium"
-                  >
-                    {copiedId === creative.id ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" /> Copy Text
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPreviewModal(creative)}
+                      className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                      title="Preview media and trim duration before adding to timeline"
+                    >
+                      <Scissors className="w-3.5 h-3.5" /> Preview & Trim
+                    </button>
+
+                    <button
+                      onClick={() => handleCopy(`${creative.headline}\n${creative.bodyText}`, creative.id)}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-medium"
+                    >
+                      {copiedId === creative.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copy Text
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED PREVIEW & TRIM ASSET MODAL */}
+      {previewAsset && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-2xl w-full border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md">
+                  <Scissors className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    {previewAsset.title}
+                    <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-bold uppercase">
+                      {previewAsset.format}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-sans">
+                    Preview media asset and customize in/out trim points for the commercial timeline
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewAsset(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Notification Banner */}
+            {addedTimelineNotice && (
+              <div className="p-3 bg-emerald-950 border-b border-emerald-800 text-emerald-200 text-xs font-bold flex items-center justify-between animate-fadeIn">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  {addedTimelineNotice}
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">ADDED</span>
+              </div>
+            )}
+
+            {/* Modal Body: Player Canvas + Trimmer */}
+            <div className="p-5 space-y-5 overflow-y-auto">
+              {/* Media Preview Player */}
+              <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group">
+                <video
+                  src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                  autoPlay={isPreviewPlaying}
+                  loop
+                  muted={isMuted}
+                  className={`w-full object-cover transition-all ${
+                    cropRatio === '9:16' ? 'max-w-[200px] h-[280px]' : cropRatio === '1:1' ? 'max-w-[260px] h-[260px]' : cropRatio === '4:5' ? 'max-w-[240px] h-[280px]' : 'h-[240px] sm:h-[280px]'
+                  }`}
+                />
+
+                {/* Headline Overlay Badge */}
+                <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/80 max-w-[80%] pointer-events-none">
+                  <p className="text-xs font-bold text-amber-300 truncate">
+                    "{previewAsset.headline}"
+                  </p>
+                </div>
+
+                {/* Aspect Ratio Floating Tag */}
+                <div className="absolute top-3 right-3 bg-indigo-950/90 text-indigo-300 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-700">
+                  {cropRatio}
+                </div>
+
+                {/* On-Player Overlay Controls */}
+                <div className="absolute bottom-3 left-3 right-3 bg-slate-950/90 backdrop-blur-md p-2 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewPlaying(!isPreviewPlaying)}
+                      className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer"
+                    >
+                      {isPreviewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMuted(!isMuted)}
+                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                    >
+                      {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
+                    <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Trimmed Duration: <strong className="text-amber-400">{(trimEnd - trimStart).toFixed(1)}s</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Crop & Aspect Ratio Controls */}
+              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <Crop className="w-3.5 h-3.5 text-indigo-400" /> Crop / Aspect Ratio:
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {(['16:9', '9:16', '1:1', '4:5'] as const).map((ratio) => (
+                    <button
+                      key={ratio}
+                      type="button"
+                      onClick={() => setCropRatio(ratio)}
+                      className={`px-2.5 py-1 rounded-lg font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                        cropRatio === ratio
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {ratio}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Interactive Timeline Trimmer Bar */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <Scissors className="w-3.5 h-3.5 text-amber-400" /> Interactive Timeline Trimmer
+                  </span>
+                  <span className="font-mono text-[11px] text-slate-400">
+                    In: <strong className="text-emerald-400">{trimStart.toFixed(1)}s</strong> | Out: <strong className="text-rose-400">{trimEnd.toFixed(1)}s</strong>
+                  </span>
+                </div>
+
+                {/* Dual Scrubber Range Sliders */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
+                    <span>In-Point (Start)</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max={trimEnd - 0.5}
+                      step="0.1"
+                      value={trimStart}
+                      onChange={(e) => setTrimStart(parseFloat(e.target.value))}
+                      className="w-full accent-emerald-500 cursor-pointer"
+                    />
+                    <span className="w-10 text-right text-emerald-400 font-bold">{trimStart.toFixed(1)}s</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
+                    <span>Out-Point (End)</span>
+                    <input
+                      type="range"
+                      min={trimStart + 0.5}
+                      max={totalAssetDuration}
+                      step="0.1"
+                      value={trimEnd}
+                      onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
+                      className="w-full accent-rose-500 cursor-pointer"
+                    />
+                    <span className="w-10 text-right text-rose-400 font-bold">{trimEnd.toFixed(1)}s</span>
+                  </div>
+                </div>
+
+                {/* Scrubber Visual Representation Track */}
+                <div className="h-3 bg-slate-800 rounded-full overflow-hidden relative border border-slate-700">
+                  <div
+                    className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-500 via-indigo-500 to-rose-500 rounded-full"
+                    style={{
+                      left: `${(trimStart / totalAssetDuration) * 100}%`,
+                      width: `${((trimEnd - trimStart) / totalAssetDuration) * 100}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="px-5 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setPreviewAsset(null)}
+                className="px-4 py-2 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddToTimeline}
+                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-extrabold rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add Trimmed Clip to Commercial Timeline
+              </button>
+            </div>
           </div>
         </div>
       )}
