@@ -1,0 +1,6 @@
+{
+  "name": "ZynAds",
+  "description": "ZynAds — Small Business Marketing, PR, Teleprompter & Commercial Recording Studio.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
