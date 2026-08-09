@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AdCreativeAsset } from '../types';
 import { INITIAL_CREATIVES } from '../data';
 import { 
   Plus, Copy, Check, Sparkles, Video, ExternalLink, MousePointer, Target,
   Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2,
-  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX
+  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX, Gauge, FastForward, Rewind, SlidersHorizontal
 } from 'lucide-react';
 
 interface TransitionEffect {
@@ -60,19 +60,37 @@ export default function CreativesView() {
   const [appliedNotice, setAppliedNotice] = useState<string | null>(null);
 
   // Dedicated Asset Preview & Trim Modal State
+  const modalVideoRef = useRef<HTMLVideoElement>(null);
   const [previewAsset, setPreviewAsset] = useState<AdCreativeAsset | null>(null);
   const [trimStart, setTrimStart] = useState<number>(0.5);
   const [trimEnd, setTrimEnd] = useState<number>(5.5);
   const [totalAssetDuration] = useState<number>(8.0);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState<boolean>(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [cropRatio, setCropRatio] = useState<'16:9' | '9:16' | '1:1' | '4:5'>('16:9');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [addedTimelineNotice, setAddedTimelineNotice] = useState<string | null>(null);
+
+  const handlePlaybackSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+    if (modalVideoRef.current) {
+      modalVideoRef.current.playbackRate = speed;
+    }
+  };
+
+  const handleNudgeTrim = (type: 'start' | 'end', delta: number) => {
+    if (type === 'start') {
+      setTrimStart(prev => Math.max(0, Math.min(trimEnd - 0.2, +(prev + delta).toFixed(1))));
+    } else {
+      setTrimEnd(prev => Math.min(totalAssetDuration, Math.max(trimStart + 0.2, +(prev + delta).toFixed(1))));
+    }
+  };
 
   const handleOpenPreviewModal = (asset: AdCreativeAsset) => {
     setPreviewAsset(asset);
     setTrimStart(0.5);
     setTrimEnd(5.5);
+    setPlaybackSpeed(1.0);
     setIsPreviewPlaying(true);
   };
 
@@ -590,6 +608,7 @@ export default function CreativesView() {
               {/* Media Preview Player */}
               <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group">
                 <video
+                  ref={modalVideoRef}
                   src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
                   autoPlay={isPreviewPlaying}
                   loop
@@ -633,6 +652,8 @@ export default function CreativesView() {
                   <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
                     <Clock className="w-3.5 h-3.5 text-indigo-400" />
                     <span>Trimmed Duration: <strong className="text-amber-400">{(trimEnd - trimStart).toFixed(1)}s</strong></span>
+                    <span className="text-slate-500">|</span>
+                    <span className="text-cyan-400 font-bold">{playbackSpeed}x Speed</span>
                   </div>
                 </div>
               </div>
@@ -671,10 +692,18 @@ export default function CreativesView() {
                   </span>
                 </div>
 
-                {/* Dual Scrubber Range Sliders */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
-                    <span>In-Point (Start)</span>
+                {/* Dual Scrubber Range Sliders with Fine Nudge Controls */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+                    <span className="w-24 shrink-0 font-bold text-emerald-400">In-Point (Start)</span>
+                    <button
+                      type="button"
+                      onClick={() => handleNudgeTrim('start', -0.1)}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 rounded font-bold cursor-pointer"
+                      title="Nudge In-Point -0.1s"
+                    >
+                      -0.1s
+                    </button>
                     <input
                       type="range"
                       min="0"
@@ -684,11 +713,27 @@ export default function CreativesView() {
                       onChange={(e) => setTrimStart(parseFloat(e.target.value))}
                       className="w-full accent-emerald-500 cursor-pointer"
                     />
-                    <span className="w-10 text-right text-emerald-400 font-bold">{trimStart.toFixed(1)}s</span>
+                    <button
+                      type="button"
+                      onClick={() => handleNudgeTrim('start', 0.1)}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 rounded font-bold cursor-pointer"
+                      title="Nudge In-Point +0.1s"
+                    >
+                      +0.1s
+                    </button>
+                    <span className="w-12 text-right text-emerald-400 font-bold">{trimStart.toFixed(1)}s</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
-                    <span>Out-Point (End)</span>
+                  <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+                    <span className="w-24 shrink-0 font-bold text-rose-400">Out-Point (End)</span>
+                    <button
+                      type="button"
+                      onClick={() => handleNudgeTrim('end', -0.1)}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-slate-800 rounded font-bold cursor-pointer"
+                      title="Nudge Out-Point -0.1s"
+                    >
+                      -0.1s
+                    </button>
                     <input
                       type="range"
                       min={trimStart + 0.5}
@@ -698,7 +743,15 @@ export default function CreativesView() {
                       onChange={(e) => setTrimEnd(parseFloat(e.target.value))}
                       className="w-full accent-rose-500 cursor-pointer"
                     />
-                    <span className="w-10 text-right text-rose-400 font-bold">{trimEnd.toFixed(1)}s</span>
+                    <button
+                      type="button"
+                      onClick={() => handleNudgeTrim('end', 0.1)}
+                      className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-rose-300 border border-slate-800 rounded font-bold cursor-pointer"
+                      title="Nudge Out-Point +0.1s"
+                    >
+                      +0.1s
+                    </button>
+                    <span className="w-12 text-right text-rose-400 font-bold">{trimEnd.toFixed(1)}s</span>
                   </div>
                 </div>
 
@@ -711,6 +764,54 @@ export default function CreativesView() {
                       width: `${((trimEnd - trimStart) / totalAssetDuration) * 100}%`
                     }}
                   />
+                </div>
+              </div>
+
+              {/* Bottom Commercial Editing Suite: Playback Speed Slider & Controls */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <Gauge className="w-3.5 h-3.5 text-cyan-400" /> Commercial Playback Speed Slider & Presets
+                  </span>
+                  <span className="font-mono text-[11px] text-cyan-300 font-bold">
+                    {playbackSpeed.toFixed(2)}x Speed
+                  </span>
+                </div>
+
+                {/* Speed Range Slider */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-mono text-slate-400">0.25x</span>
+                  <input
+                    type="range"
+                    min="0.25"
+                    max="2.5"
+                    step="0.05"
+                    value={playbackSpeed}
+                    onChange={(e) => handlePlaybackSpeedChange(parseFloat(e.target.value))}
+                    className="w-full accent-cyan-400 cursor-pointer"
+                  />
+                  <span className="text-[10px] font-mono text-slate-400">2.50x</span>
+                </div>
+
+                {/* Preset Speed Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-900">
+                  <span className="text-[11px] text-slate-400 font-medium">Quick Speed Presets:</span>
+                  <div className="flex items-center gap-1.5">
+                    {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((spd) => (
+                      <button
+                        key={spd}
+                        type="button"
+                        onClick={() => handlePlaybackSpeedChange(spd)}
+                        className={`px-2.5 py-1 rounded-lg font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                          playbackSpeed === spd
+                            ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                            : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {spd === 1.0 ? '1.0x Normal' : `${spd}x`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
