@@ -4,7 +4,8 @@ import { INITIAL_CREATIVES } from '../data';
 import { 
   Plus, Copy, Check, Sparkles, Video, ExternalLink, MousePointer, Target,
   Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2,
-  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX, Gauge, FastForward, Rewind, SlidersHorizontal
+  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX, Gauge, FastForward, Rewind, SlidersHorizontal,
+  FolderKanban, Upload, Image as ImageIcon, Trash2, Download, Tag, FileUp, FileVideo, CheckCircle, RefreshCw
 } from 'lucide-react';
 
 interface TransitionEffect {
@@ -30,6 +31,20 @@ interface AudioDuckingSetting {
   enabled: boolean;
 }
 
+export interface UserAsset {
+  id: string;
+  name: string;
+  type: 'video' | 'image' | 'audio';
+  url: string;
+  size: string;
+  duration?: string;
+  aspectRatio: string;
+  uploadedAt: string;
+  tags: string[];
+  isProjectActive: boolean;
+  tagSymbol?: string;
+}
+
 export default function CreativesView() {
   const [creatives, setCreatives] = useState<AdCreativeAsset[]>(INITIAL_CREATIVES);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -43,9 +58,132 @@ export default function CreativesView() {
   const [ctaText, setCtaText] = useState('Claim Free Trial');
   const [format, setFormat] = useState<AdCreativeAsset['format']>('Single Image');
 
-  // Effect Selection Panel State
-  const [activeTab, setActiveTab] = useState<'effects' | 'creatives'>('effects');
-  const [selectedTransition, setSelectedTransition] = useState<string>('cross-dissolve');
+  // Navigation & My Assets State
+  const [activeTab, setActiveTab] = useState<'assets' | 'effects' | 'creatives'>('assets');
+  const [assetFilter, setAssetFilter] = useState<'all' | 'video' | 'image' | 'audio' | 'active'>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [userAssets, setUserAssets] = useState<UserAsset[]>([
+    {
+      id: 'user-asset-1',
+      name: 'Zen Ads Organic Code Farm Pasture Commercial',
+      type: 'video',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      size: '18.4 MB',
+      duration: '0:30',
+      aspectRatio: '16:9',
+      uploadedAt: 'Just now',
+      tags: ['commercial', 'main-character', 'farm'],
+      isProjectActive: true,
+      tagSymbol: '@img-1'
+    },
+    {
+      id: 'user-asset-2',
+      name: '3D Animated RAM Sticks in Pasture Rows',
+      type: 'video',
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      size: '12.2 MB',
+      duration: '0:18',
+      aspectRatio: '16:9',
+      uploadedAt: 'Today, 06:45 AM',
+      tags: ['b-roll', '3d-ram', 'parody'],
+      isProjectActive: false,
+      tagSymbol: '@img-2'
+    },
+    {
+      id: 'user-asset-3',
+      name: 'Zyncast CFO News Broadcast Studio Backdrop',
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=1200&q=80',
+      size: '3.1 MB',
+      aspectRatio: '16:9',
+      uploadedAt: 'Yesterday',
+      tags: ['studio', 'backdrop', 'news'],
+      isProjectActive: false,
+      tagSymbol: '@img-3'
+    },
+    {
+      id: 'user-asset-4',
+      name: 'Founder Porch Keyframe Photo',
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+      size: '2.4 MB',
+      aspectRatio: '1:1',
+      uploadedAt: 'Yesterday',
+      tags: ['character', 'porch', 'keyframe'],
+      isProjectActive: false,
+      tagSymbol: '@img-4'
+    }
+  ]);
+
+  const [assetNotice, setAssetNotice] = useState<string | null>(null);
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const newUploadedAssets: UserAsset[] = [];
+    Array.from(files).forEach((file, idx) => {
+      const fileType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : 'image';
+      const fileUrl = URL.createObjectURL(file);
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+      const count = userAssets.length + newUploadedAssets.length + 1;
+
+      newUploadedAssets.push({
+        id: `user-upload-${Date.now()}-${idx}`,
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        type: fileType,
+        url: fileUrl,
+        size: sizeMB,
+        duration: fileType === 'video' ? '0:15' : undefined,
+        aspectRatio: '16:9',
+        uploadedAt: 'Just now',
+        tags: ['custom-upload', fileType],
+        isProjectActive: idx === 0 && userAssets.filter(a => a.isProjectActive).length === 0,
+        tagSymbol: `@img-${count}`
+      });
+    });
+
+    setUserAssets(prev => [...newUploadedAssets, ...prev]);
+    setAssetNotice(`✨ Successfully uploaded ${newUploadedAssets.length} asset(s) to My Assets library!`);
+    setTimeout(() => setAssetNotice(null), 4000);
+  };
+
+  const handleSetActiveProjectAsset = (id: string) => {
+    setUserAssets(prev => prev.map(a => ({
+      ...a,
+      isProjectActive: a.id === id
+    })));
+    const selected = userAssets.find(a => a.id === id);
+    if (selected) {
+      setAssetNotice(`🎯 "${selected.name}" set as active asset for commercial render! Replaced placeholders.`);
+      setTimeout(() => setAssetNotice(null), 4000);
+    }
+  };
+
+  const handleDeleteUserAsset = (id: string) => {
+    setUserAssets(prev => prev.filter(a => a.id !== id));
+    setAssetNotice('🗑️ Asset removed from library.');
+    setTimeout(() => setAssetNotice(null), 2500);
+  };
+
+  const handlePreviewUserVideo = (asset: UserAsset) => {
+    const adAdapter: AdCreativeAsset = {
+      id: asset.id,
+      campaignId: 'camp-101',
+      title: asset.name,
+      headline: asset.name,
+      bodyText: `User uploaded ${asset.type} asset (${asset.size})`,
+      ctaText: 'Use in Commercial',
+      format: asset.type === 'video' ? 'Short Video' : 'Single Image',
+      status: 'Active'
+    };
+    handleOpenPreviewModal(adAdapter);
+  };
+
+  const selectedActiveAsset = userAssets.find(a => a.isProjectActive) || userAssets[0];
+
+  const selectedTransitionState = useState<string>('cross-dissolve');
+  const [selectedTransition, setSelectedTransition] = selectedTransitionState;
   const [transitionSpeed, setTransitionSpeed] = useState<number>(0.8);
   const [selectedFilter, setSelectedFilter] = useState<string>('teal-orange');
   const [filterIntensity, setFilterIntensity] = useState<number>(85);
@@ -171,7 +309,28 @@ export default function CreativesView() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Hidden File Input for Custom Uploads */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => handleFileUpload(e.target.files)}
+            multiple
+            accept="image/*,video/*,audio/*"
+            className="hidden"
+          />
+
           <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('assets')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'assets'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FolderKanban className="w-3.5 h-3.5" /> My Assets ({userAssets.length})
+            </button>
             <button
               type="button"
               onClick={() => setActiveTab('effects')}
@@ -197,10 +356,11 @@ export default function CreativesView() {
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Add Copy Variation
+            <Upload className="w-3.5 h-3.5" /> Upload Media
           </button>
         </div>
       </div>
@@ -245,6 +405,302 @@ export default function CreativesView() {
           </div>
         </div>
       </div>
+
+      {/* TAB 0: MY ASSETS & MEDIA LIBRARY PANEL */}
+      {activeTab === 'assets' && (
+        <div className="space-y-6">
+          {/* Header Banner & Active Asset Summary */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white shadow-xl flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-tr from-emerald-500 to-indigo-600 rounded-2xl text-white shadow-lg">
+                <FolderKanban className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  My Project Assets & Media Library
+                  <span className="text-[10px] font-mono font-bold bg-emerald-400 text-slate-950 px-2 py-0.5 rounded uppercase">
+                    {userAssets.length} Assets Stored
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Upload custom videos and images to replace default studio placeholders in commercial renders and AI studio prompts.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" /> Upload Custom Images & Videos
+              </button>
+            </div>
+          </div>
+
+          {assetNotice && (
+            <div className="p-3.5 bg-emerald-950/90 border border-emerald-500 text-emerald-200 text-xs font-bold rounded-xl flex items-center justify-between shadow-lg animate-fadeIn">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                {assetNotice}
+              </span>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
+                UPDATED
+              </span>
+            </div>
+          )}
+
+          {/* Active Asset Spotlight Card */}
+          {selectedActiveAsset && (
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/50 rounded-2xl p-4 sm:p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative w-24 h-16 bg-black rounded-xl border border-indigo-400/40 overflow-hidden shrink-0">
+                  {selectedActiveAsset.type === 'video' ? (
+                    <video src={selectedActiveAsset.url} className="w-full h-full object-cover" muted loop autoPlay />
+                  ) : (
+                    <img src={selectedActiveAsset.url} alt={selectedActiveAsset.name} className="w-full h-full object-cover" />
+                  )}
+                  <div className="absolute top-1 left-1 bg-indigo-600 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white shadow-xs">
+                    {selectedActiveAsset.tagSymbol || '@active'}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold bg-emerald-500 text-slate-950 px-2 py-0.5 rounded uppercase">
+                      Active Primary Asset
+                    </span>
+                    <span className="text-xs text-indigo-300 font-medium">Replaces Studio Placeholders</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white leading-tight">{selectedActiveAsset.name}</h4>
+                  <p className="text-[11px] text-slate-300 font-mono">
+                    Type: <strong className="text-indigo-300 capitalize">{selectedActiveAsset.type}</strong> • Size: {selectedActiveAsset.size} • Ratio: {selectedActiveAsset.aspectRatio}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start md:self-center">
+                {selectedActiveAsset.type === 'video' && (
+                  <button
+                    type="button"
+                    onClick={() => handlePreviewUserVideo(selectedActiveAsset)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Scissors className="w-3.5 h-3.5 text-cyan-400" /> Trim & Adjust Speed
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleCopy(selectedActiveAsset.url, 'active-url')}
+                  className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  {copiedId === 'active-url' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  Copy Asset URL
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Drag & Drop File Upload Dropzone */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-indigo-200 hover:border-indigo-500 bg-indigo-50/40 hover:bg-indigo-50/80 transition-all rounded-2xl p-6 text-center cursor-pointer space-y-2 group"
+          >
+            <div className="w-12 h-12 bg-white rounded-2xl border border-indigo-100 shadow-sm flex items-center justify-center mx-auto text-indigo-600 group-hover:scale-110 transition-transform">
+              <FileUp className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">
+                Click or Drag & Drop MP4, MOV, JPG, PNG files here to upload
+              </p>
+              <p className="text-xs text-slate-500">
+                Uploaded files will immediately replace default video placeholders in commercial renders and AI keyframe generation
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {[
+                { id: 'all', label: `All Assets (${userAssets.length})` },
+                { id: 'video', label: `Videos (${userAssets.filter(a => a.type === 'video').length})` },
+                { id: 'image', label: `Images (${userAssets.filter(a => a.type === 'image').length})` },
+                { id: 'active', label: 'Active in Project' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setAssetFilter(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    assetFilter === tab.id
+                      ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="text-xs font-mono text-slate-500">
+              Showing <strong className="text-slate-900">{userAssets.filter(a => {
+                if (assetFilter === 'video') return a.type === 'video';
+                if (assetFilter === 'image') return a.type === 'image';
+                if (assetFilter === 'active') return a.isProjectActive;
+                return true;
+              }).length}</strong> items
+            </div>
+          </div>
+
+          {/* Grid of My Assets */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {userAssets
+              .filter(a => {
+                if (assetFilter === 'video') return a.type === 'video';
+                if (assetFilter === 'image') return a.type === 'image';
+                if (assetFilter === 'active') return a.isProjectActive;
+                return true;
+              })
+              .map((asset) => {
+                return (
+                  <div
+                    key={asset.id}
+                    className={`bg-white rounded-2xl border transition-all p-4 space-y-3 flex flex-col justify-between shadow-xs hover:shadow-md ${
+                      asset.isProjectActive ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/10' : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      {/* Card Header Tag & Badges */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2 py-0.5 font-mono font-bold text-[10px] uppercase rounded border flex items-center gap-1 ${
+                            asset.type === 'video'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : 'bg-cyan-50 text-cyan-700 border-cyan-200'
+                          }`}>
+                            {asset.type === 'video' ? <FileVideo className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                            {asset.type}
+                          </span>
+                          {asset.tagSymbol && (
+                            <span className="px-1.5 py-0.5 bg-slate-900 text-amber-300 font-mono text-[10px] font-bold rounded">
+                              {asset.tagSymbol}
+                            </span>
+                          )}
+                        </div>
+
+                        {asset.isProjectActive ? (
+                          <span className="px-2 py-0.5 bg-emerald-500 text-slate-950 font-bold text-[10px] rounded flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Active Project Media
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-slate-400">{asset.uploadedAt}</span>
+                        )}
+                      </div>
+
+                      {/* Media Display Box */}
+                      <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden h-40 flex items-center justify-center group">
+                        {asset.type === 'video' ? (
+                          <video
+                            src={asset.url}
+                            controls
+                            muted
+                            loop
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={asset.url}
+                            alt={asset.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        )}
+
+                        {asset.duration && (
+                          <span className="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold">
+                            {asset.duration}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Asset Info */}
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{asset.name}</h4>
+                        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-1">
+                          <span>Size: {asset.size}</span>
+                          <span>Ratio: {asset.aspectRatio}</span>
+                        </div>
+                      </div>
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1">
+                        {asset.tags.map(t => (
+                          <span key={t} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Toolbar */}
+                    <div className="pt-2 border-t border-slate-100 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSetActiveProjectAsset(asset.id)}
+                        className={`w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          asset.isProjectActive
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'bg-slate-900 hover:bg-slate-800 text-white'
+                        }`}
+                      >
+                        {asset.isProjectActive ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-white" /> Currently Selected Project Asset
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 text-emerald-400" /> Replace Placeholder with This Asset
+                          </>
+                        )}
+                      </button>
+
+                      <div className="flex items-center justify-between gap-1">
+                        {asset.type === 'video' && (
+                          <button
+                            type="button"
+                            onClick={() => handlePreviewUserVideo(asset)}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer"
+                          >
+                            <Scissors className="w-3 h-3 text-indigo-600" /> Trim / Speed
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(asset.tagSymbol || asset.url, asset.id)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedId === asset.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                          Copy Tag
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUserAsset(asset.id)}
+                          className="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer"
+                          title="Delete Asset"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: COMMERCIAL PRODUCTION POST-EFFECTS & MASTERING SELECTION PANEL */}
       {activeTab === 'effects' && (
