@@ -75,7 +75,7 @@ Provide a 3-scene table/list containing:
 `;
 
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.6-flash",
           contents: prompt,
         });
 
@@ -164,7 +164,7 @@ Respond with ONLY a strict JSON object with these exact keys:
 
         try {
           const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.6-flash",
             contents: aiPrompt,
           });
 
@@ -220,24 +220,36 @@ Respond with ONLY a strict JSON object with these exact keys:
       if (key) {
         const ai = new GoogleGenAI({ apiKey: key });
 
-        // Try Imagen 3 API model first
+        // Try Gemini Image model first
         try {
-          const imagenResponse = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
-            prompt: `Photorealistic 4K broadcast television video commercial studio background set, ${prompt}, ultra high quality, clean cinema lighting, no people, 16:9 aspect ratio`,
+          const imgGenResponse = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite-image',
+            contents: {
+              parts: [
+                {
+                  text: `Photorealistic 4K broadcast television video commercial studio background set, ${prompt}, ultra high quality, clean cinema lighting, no people`,
+                },
+              ],
+            },
             config: {
-              numberOfImages: 1,
-              outputMimeType: 'image/jpeg',
-              aspectRatio: '16:9',
+              imageConfig: {
+                aspectRatio: '16:9',
+              },
             },
           });
 
-          if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
-            const base64ImageBytes = imagenResponse.generatedImages[0].image.imageBytes;
-            imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
+          if (imgGenResponse.candidates?.[0]?.content?.parts) {
+            for (const part of imgGenResponse.candidates[0].content.parts) {
+              if (part.inlineData) {
+                const base64ImageBytes = part.inlineData.data;
+                const mime = part.inlineData.mimeType || 'image/jpeg';
+                imageUrl = `data:${mime};base64,${base64ImageBytes}`;
+                break;
+              }
+            }
           }
-        } catch (imagenErr) {
-          console.warn("Imagen 3 generateImages API call failed, falling back to Gemini text descriptor + studio preset image:", imagenErr);
+        } catch (imgErr) {
+          console.warn("Gemini Image generation call failed, falling back to Gemini text descriptor + studio preset image:", imgErr);
         }
 
         const aiPrompt = `You are an expert virtual set designer and broadcast studio lighting director.
@@ -245,14 +257,14 @@ The user wants a studio backdrop matching this description: "${prompt}".
 
 Respond with ONLY a strict JSON object with these exact keys:
 {
-  "name": "Short descriptive name (e.g. Google Imagen 3 Skyline Studio)",
-  "badgeText": "Short 2-3 word uppercase theme badge (e.g. IMAGEN 3 STUDIO)",
+  "name": "Short descriptive name (e.g. AI Skyline Studio)",
+  "badgeText": "Short 2-3 word uppercase theme badge (e.g. AI STUDIO)",
   "description": "Short 1-sentence description of the AI generated studio set visual"
 }`;
 
         try {
           const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3.6-flash",
             contents: aiPrompt,
           });
 
@@ -305,7 +317,7 @@ Respond with ONLY a strict JSON object with these exact keys:
     }
   });
 
-  // Dedicated Google Imagen 3 Standalone Image Generation API Route
+  // Dedicated Standalone Image Generation API Route
   app.post("/api/zynads/generate-image", async (req, res: any) => {
     try {
       const key = process.env.GEMINI_API_KEY;
@@ -318,25 +330,36 @@ Respond with ONLY a strict JSON object with these exact keys:
       if (key) {
         const ai = new GoogleGenAI({ apiKey: key });
         try {
-          const imagenResponse = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
-            prompt: `${prompt}, photorealistic, studio commercial quality, 8k resolution`,
+          const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite-image',
+            contents: {
+              parts: [
+                {
+                  text: `${prompt}, photorealistic, studio commercial quality, 8k resolution`,
+                },
+              ],
+            },
             config: {
-              numberOfImages: 1,
-              outputMimeType: 'image/jpeg',
-              aspectRatio: aspectRatio || '16:9',
+              imageConfig: {
+                aspectRatio: aspectRatio === '9:16' ? '9:16' : aspectRatio === '1:1' ? '1:1' : '16:9',
+              },
             },
           });
 
-          if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
-            const base64ImageBytes = imagenResponse.generatedImages[0].image.imageBytes;
-            return res.json({
-              success: true,
-              imageUrl: `data:image/jpeg;base64,${base64ImageBytes}`
-            });
+          if (response.candidates?.[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+              if (part.inlineData) {
+                const base64ImageBytes = part.inlineData.data;
+                const mime = part.inlineData.mimeType || 'image/jpeg';
+                return res.json({
+                  success: true,
+                  imageUrl: `data:${mime};base64,${base64ImageBytes}`
+                });
+              }
+            }
           }
         } catch (err: any) {
-          console.warn("Imagen 3 generateImages API error:", err);
+          console.warn("Gemini generate-image API error:", err);
         }
       }
 
@@ -351,7 +374,7 @@ Respond with ONLY a strict JSON object with these exact keys:
     }
   });
 
-  // AI Audio Transcription Endpoint (Gemini 2.5 Flash Audio Model + Procedural Fallback)
+  // AI Audio Transcription Endpoint (Gemini 3.6 Flash Audio Model + Procedural Fallback)
   app.post("/api/zynads/transcribe", async (req, res: any) => {
     try {
       const key = process.env.GEMINI_API_KEY;
@@ -364,7 +387,7 @@ Respond with ONLY a strict JSON object with these exact keys:
       if (key) {
         const ai = new GoogleGenAI({ apiKey: key });
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.6-flash",
           contents: [
             {
               inlineData: {

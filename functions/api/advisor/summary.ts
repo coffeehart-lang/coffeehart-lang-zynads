@@ -79,7 +79,7 @@ Keep the tone expert, supportive, objective, and extremely precise. Use markdown
     }
 
     // Call the Gemini API via direct REST fetch (zero external packages required)
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
     const apiResponse = await fetch(geminiUrl, {
       method: "POST",
       headers: {
