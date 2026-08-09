@@ -316,14 +316,15 @@ export default function VideoGeneratorView() {
               onClick={() => setActiveStudioTool('nanobanana')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeStudioTool === 'nanobanana'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <div className="flex items-center gap-2.5">
                 <Flame className="w-4 h-4 text-rose-400" />
-                <span>Nano Banana</span>
+                <span>Nano Banana Pro</span>
               </div>
+              <span className="text-[9px] font-mono font-bold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded shadow-xs">PRO</span>
             </button>
 
             <button
@@ -386,6 +387,7 @@ export default function VideoGeneratorView() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="bg-slate-900 text-sm font-extrabold text-white pr-7 py-1 px-3 rounded-xl border border-slate-800 focus:outline-none cursor-pointer appearance-none flex items-center gap-1 shadow-sm"
               >
+                <option value="Nano Banana Pro 2.5" className="bg-slate-900 text-amber-300 font-bold">🍌 Nano Banana Pro 2.5 (Ultra High-Res Commercial Engine)</option>
                 <option value="Seedance 2.5" className="bg-slate-900 text-white">Seedance 2.5</option>
                 <option value="MiniMax H3" className="bg-slate-900 text-white">MiniMax H3</option>
                 <option value="Google Veo 2" className="bg-slate-900 text-white">Google Veo 2 (4K)</option>
@@ -430,12 +432,65 @@ export default function VideoGeneratorView() {
         )}
 
         {activeStudioTool === 'nanobanana' && (
-          <div className="bg-[#13151c] p-6 rounded-2xl border border-slate-800 space-y-4 text-white">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-rose-400">
-              <Flame className="w-4 h-4" /> Nano Banana Script & Commercial Storyboarder
-            </h3>
-            <p className="text-xs text-slate-400">Auto-generates punchy commercial scripts and keyframe sequences for Zyncast CFO.</p>
-            <button onClick={() => setNotice('Nano Banana script auto-filled into video prompt box!')} className="px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl">Auto-Generate Commercial Script</button>
+          <div className="bg-gradient-to-r from-slate-900 via-rose-950/60 to-slate-900 p-6 rounded-2xl border border-rose-500/40 space-y-4 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold flex items-center gap-2 text-rose-300">
+                <Flame className="w-5 h-5 text-amber-400" /> Nano Banana Pro 2.5 Commercial Script & Storyboard Studio
+              </h3>
+              <span className="text-[10px] font-mono font-bold bg-amber-400 text-slate-950 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                Pro Tier Unlocked
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Nano Banana Pro is our flagship generative model specialized for comedic corporate ads, farm pasture scenes, and animated mascot commercials like <strong>Zyncast CFO Organic Code</strong>.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedModel('Nano Banana Pro 2.5');
+                  setPrompt(`So, my video would open taking place on a farm and a pasture and all that, and it would open up to the main character on the porch. And then from there, he would say a script of like, "Do you know where your code comes from?"\n"And then it would say, "Here at Zyncastcfo, all our code is organic, cage-free, and straight to you." zyncastcfo is the all in 1 real business tool for all business owners checks us out for free trial .\nAnd then in that whole scene while he's walking down the pasture rows, there would be animals that would be a parody type thing off of computer names, like RAM, like RAM sticks. So, they'd be like little cartoonish RAM sticks and stuff like that.`);
+                  setNotice('🍌 Nano Banana Pro: Auto-filled Zyncast CFO Organic Code script & model selected!');
+                }}
+                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
+              >
+                <div className="text-xs font-bold text-amber-300 group-hover:text-amber-200 flex items-center justify-between">
+                  <span>Farm Pasture Commercial</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <p className="text-[10px] text-slate-400">Main character on porch + 3D RAM sticks walking down pasture rows</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedModel('Nano Banana Pro 2.5');
+                  setNotice('🍌 Nano Banana Pro: Voice Synthesizer calibrated for studio narrator voice!');
+                }}
+                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
+              >
+                <div className="text-xs font-bold text-rose-300 group-hover:text-rose-200 flex items-center justify-between">
+                  <span>Voice Actor Synthesizer</span>
+                  <Volume2 className="w-3.5 h-3.5 text-rose-400" />
+                </div>
+                <p className="text-[10px] text-slate-400">Synthesizes studio voiceover dialogue with precise audio lip sync</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedModel('Nano Banana Pro 2.5');
+                  setNotice('🍌 Nano Banana Pro: 4K Raytraced lighting pass enabled for renders!');
+                }}
+                className="p-3 bg-slate-950/80 hover:bg-slate-900 border border-rose-500/30 hover:border-rose-400 rounded-xl text-left space-y-1 transition-all cursor-pointer group"
+              >
+                <div className="text-xs font-bold text-cyan-300 group-hover:text-cyan-200 flex items-center justify-between">
+                  <span>Raytraced 4K Render</span>
+                  <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
+                </div>
+                <p className="text-[10px] text-slate-400">Sub-pixel neural density & realistic volumetric sunlight flares</p>
+              </button>
+            </div>
           </div>
         )}
 

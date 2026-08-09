@@ -4,7 +4,7 @@ import { INITIAL_CREATIVES } from '../data';
 import { 
   Plus, Copy, Check, Sparkles, Video, ExternalLink, MousePointer, Target,
   Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2,
-  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX, Gauge, FastForward, Rewind, SlidersHorizontal,
+  Scissors, Play, Pause, RotateCcw, Crop, Clock, VolumeX, Gauge, FastForward, Rewind, SlidersHorizontal, Maximize,
   FolderKanban, Upload, Image as ImageIcon, Trash2, Download, Tag, FileUp, FileVideo, CheckCircle, RefreshCw
 } from 'lucide-react';
 
@@ -202,12 +202,37 @@ export default function CreativesView() {
   const [previewAsset, setPreviewAsset] = useState<AdCreativeAsset | null>(null);
   const [trimStart, setTrimStart] = useState<number>(0.5);
   const [trimEnd, setTrimEnd] = useState<number>(5.5);
-  const [totalAssetDuration] = useState<number>(8.0);
+  const [totalAssetDuration, setTotalAssetDuration] = useState<number>(8.0);
+  const [currentVideoTime, setCurrentVideoTime] = useState<number>(0);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState<boolean>(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [cropRatio, setCropRatio] = useState<'16:9' | '9:16' | '1:1' | '4:5'>('16:9');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [addedTimelineNotice, setAddedTimelineNotice] = useState<string | null>(null);
+
+  const handleVideoTimeUpdate = () => {
+    if (modalVideoRef.current) {
+      setCurrentVideoTime(modalVideoRef.current.currentTime);
+      if (modalVideoRef.current.duration && !isNaN(modalVideoRef.current.duration)) {
+        setTotalAssetDuration(modalVideoRef.current.duration);
+      }
+    }
+  };
+
+  const handleVideoSeek = (time: number) => {
+    setCurrentVideoTime(time);
+    if (modalVideoRef.current) {
+      modalVideoRef.current.currentTime = time;
+    }
+  };
+
+  const handleVideoFullScreen = () => {
+    if (modalVideoRef.current) {
+      if (modalVideoRef.current.requestFullscreen) {
+        modalVideoRef.current.requestFullscreen();
+      }
+    }
+  };
 
   const handlePlaybackSpeedChange = (speed: number) => {
     setPlaybackSpeed(speed);
@@ -1069,6 +1094,7 @@ export default function CreativesView() {
                   autoPlay={isPreviewPlaying}
                   loop
                   muted={isMuted}
+                  onTimeUpdate={handleVideoTimeUpdate}
                   className={`w-full object-cover transition-all ${
                     cropRatio === '9:16' ? 'max-w-[200px] h-[280px]' : cropRatio === '1:1' ? 'max-w-[260px] h-[260px]' : cropRatio === '4:5' ? 'max-w-[240px] h-[280px]' : 'h-[240px] sm:h-[280px]'
                   }`}
@@ -1086,30 +1112,71 @@ export default function CreativesView() {
                   {cropRatio}
                 </div>
 
-                {/* On-Player Overlay Controls */}
-                <div className="absolute bottom-3 left-3 right-3 bg-slate-950/90 backdrop-blur-md p-2 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                {/* On-Player Overlay Controls & Scrubber */}
+                <div className="absolute bottom-3 left-3 right-3 bg-slate-950/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-800 space-y-2 text-xs shadow-xl">
+                  {/* Interactive Timeline Scrubber Slider */}
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsPreviewPlaying(!isPreviewPlaying)}
-                      className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer"
-                    >
-                      {isPreviewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsMuted(!isMuted)}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
-                    >
-                      {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                    </button>
+                    <span className="font-mono text-[10px] text-slate-400 w-10 text-right font-bold">
+                      {currentVideoTime.toFixed(1)}s
+                    </span>
+                    <input
+                      type="range"
+                      min="0"
+                      max={totalAssetDuration || 30}
+                      step="0.1"
+                      value={currentVideoTime}
+                      onChange={(e) => handleVideoSeek(parseFloat(e.target.value))}
+                      className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                    />
+                    <span className="font-mono text-[10px] text-slate-400 w-10 font-bold">
+                      {totalAssetDuration.toFixed(1)}s
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-                    <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Trimmed Duration: <strong className="text-amber-400">{(trimEnd - trimStart).toFixed(1)}s</strong></span>
-                    <span className="text-slate-500">|</span>
-                    <span className="text-cyan-400 font-bold">{playbackSpeed}x Speed</span>
+                  <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (modalVideoRef.current) {
+                            if (isPreviewPlaying) {
+                              modalVideoRef.current.pause();
+                              setIsPreviewPlaying(false);
+                            } else {
+                              modalVideoRef.current.play();
+                              setIsPreviewPlaying(true);
+                            }
+                          }
+                        }}
+                        className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors cursor-pointer"
+                        title={isPreviewPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPreviewPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                        title={isMuted ? 'Unmute' : 'Mute'}
+                      >
+                        {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleVideoFullScreen}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                        title="Fullscreen Mode"
+                      >
+                        <Maximize className="w-4 h-4 text-cyan-400" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
+                      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Duration: <strong className="text-amber-400">{(trimEnd - trimStart).toFixed(1)}s</strong></span>
+                      <span className="text-slate-500">|</span>
+                      <span className="text-cyan-400 font-bold">{playbackSpeed}x Speed</span>
+                    </div>
                   </div>
                 </div>
               </div>
