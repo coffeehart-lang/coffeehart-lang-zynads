@@ -7,9 +7,6 @@ import { onRequestPost as handleAdvisor } from "../functions/api/advisor/summary
 export interface Env {
   GOOGLE_SERVICE_ACCOUNT_KEY?: string;
   GEMINI_API_KEY?: string;
-  ASSETS: {
-    fetch: typeof fetch;
-  };
 }
 
 export default {
@@ -35,7 +32,6 @@ export default {
       return handleAdvisor(context);
     }
 
-    // Fallback to serving static assets (frontend files)
-    return env.ASSETS.fetch(request);
+    return new Response("Not found", { status: 404 });
   }
 };
