@@ -9,6 +9,10 @@ routes = [
   { pattern = "zyncastcfo.com", custom_domain = true }
 ]
 
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
 # -------------------------------------------------------------
 # CUSTOM DOMAINS AND ROUTES CONFIGURATION
 # -------------------------------------------------------------
