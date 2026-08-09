@@ -175,7 +175,9 @@ export default function CreativesView() {
       bodyText: `User uploaded ${asset.type} asset (${asset.size})`,
       ctaText: 'Use in Commercial',
       format: asset.type === 'video' ? 'Short Video' : 'Single Image',
-      status: 'Active'
+      status: 'Active',
+      ctr: 4.8,
+      conversions: 142
     };
     handleOpenPreviewModal(adAdapter);
   };
