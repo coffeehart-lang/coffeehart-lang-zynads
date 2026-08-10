@@ -29,6 +29,11 @@ import {
 } from 'lucide-react';
 
 import { expandPrompt } from '../../utils/promptEnhancer';
+import ImageStudioView from './ImageStudioView';
+import EnhancerView from './EnhancerView';
+import NanoBananaStudioView from './NanoBananaStudioView';
+import RealtimeCanvasView from './RealtimeCanvasView';
+import EditStudioView from './EditStudioView';
 
 interface AssetReference {
   id: string;
@@ -455,6 +460,60 @@ export default function VideoGeneratorView() {
     return '"Zyncast CFO: The all-in-one real business tool. Check us out for a free trial."';
   };
 
+  const handleDownloadVideo = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setNotice('Canvas not ready for export.');
+      return;
+    }
+
+    try {
+      setNotice('🎬 Recording live commercial canvas stream (8 seconds)...');
+      const stream = canvas.captureStream(30);
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+          ? 'video/webm;codecs=vp9'
+          : 'video/webm'
+      });
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zyncast_commercial_${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setNotice('✨ Commercial video saved to your device! (.webm format)');
+      };
+
+      mediaRecorder.start();
+
+      setTimeout(() => {
+        if (mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }, maxVideoDuration * 1000);
+    } catch (err) {
+      console.warn("MediaRecorder canvas capture fallback:", err);
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `zyncast_commercial_snapshot_${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setNotice('✨ Commercial video snapshot saved to your device!');
+    }
+  };
+
   return (
     <div className="bg-[#0b0c0f] text-slate-100 min-h-screen -m-4 p-3 sm:p-5 font-sans flex flex-col md:flex-row gap-4 selection:bg-indigo-500 selection:text-white">
       
@@ -603,10 +662,17 @@ export default function VideoGeneratorView() {
         </div>
       </div>
 
-      {/* MAIN STAGE (Center Video View matching Screenshot 2) */}
+      {/* MAIN STAGE (Center Workspace view matching activeStudioTool) */}
       <div className="flex-1 max-w-5xl space-y-4" ref={containerRef}>
-        
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+        {activeStudioTool === 'image' && <ImageStudioView />}
+        {activeStudioTool === 'enhancer' && <EnhancerView />}
+        {activeStudioTool === 'nanobanana' && <NanoBananaStudioView />}
+        {activeStudioTool === 'realtime' && <RealtimeCanvasView />}
+        {activeStudioTool === 'edit' && <EditStudioView />}
+
+        {activeStudioTool === 'video' && (
+          <>
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-300">Model</span>
             <div className="relative inline-block">
@@ -1081,10 +1147,10 @@ export default function VideoGeneratorView() {
 
               <button
                 type="button"
-                onClick={() => setNotice('Downloading 4K MP4 Commercial video file...')}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                onClick={handleDownloadVideo}
+                className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all shadow-md active:scale-95"
               >
-                <Download className="w-3.5 h-3.5" /> Download
+                <Download className="w-3.5 h-3.5" /> Download Video
               </button>
 
               <button
@@ -1278,6 +1344,8 @@ export default function VideoGeneratorView() {
             <span>{notice}</span>
             <button onClick={() => setNotice(null)} className="text-emerald-400 hover:text-white font-bold text-sm">✕</button>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>
