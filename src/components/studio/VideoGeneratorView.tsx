@@ -197,7 +197,7 @@ export default function VideoGeneratorView() {
     ctx.clearRect(0, 0, width, height);
 
     if (t < 2.5) {
-      // SCENE 1: Porch intro
+      // SCENE 1: Porch intro (0.0s - 2.5s)
       if (spokenSceneRef.current !== 1 && isPlaying) {
         spokenSceneRef.current = 1;
         speakLine("Do you know where your code comes from?");
@@ -212,18 +212,82 @@ export default function VideoGeneratorView() {
         const y = (height - h) / 2;
         ctx.drawImage(img, x, y, w, h);
       } else {
-        ctx.fillStyle = '#1e293b';
+        // Procedural Porch Scene Fallback
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+        skyGrad.addColorStop(0, '#0f172a');
+        skyGrad.addColorStop(0.5, '#1e1b4b');
+        skyGrad.addColorStop(1, '#311042');
+        ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, width, height);
+
+        // Sunset Sun Glow
+        const sunGrad = ctx.createRadialGradient(width * 0.7, height * 0.3, 10, width * 0.7, height * 0.3, 200);
+        sunGrad.addColorStop(0, 'rgba(251, 146, 60, 0.8)');
+        sunGrad.addColorStop(0.5, 'rgba(244, 63, 94, 0.3)');
+        sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Distant Barn Silhouette
+        ctx.fillStyle = '#090a0f';
+        ctx.beginPath();
+        ctx.moveTo(width * 0.65, height * 0.45);
+        ctx.lineTo(width * 0.72, height * 0.35);
+        ctx.lineTo(width * 0.79, height * 0.45);
+        ctx.lineTo(width * 0.79, height * 0.60);
+        ctx.lineTo(width * 0.65, height * 0.60);
+        ctx.closePath();
+        ctx.fill();
+
+        // Wooden Porch Planks & Railing
+        ctx.fillStyle = '#271c19';
+        ctx.fillRect(0, height * 0.58, width, height * 0.42);
+
+        // Porch Floor Lines
+        ctx.strokeStyle = '#18100e';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 10; i++) {
+          ctx.beginPath();
+          ctx.moveTo(width * 0.5, height * 0.58);
+          ctx.lineTo(i * (width / 8), height);
+          ctx.stroke();
+        }
+
+        // Porch Railing Post
+        ctx.fillStyle = '#3a2823';
+        ctx.fillRect(width * 0.1, height * 0.4, 24, height * 0.3);
+        ctx.fillRect(width * 0.85, height * 0.4, 24, height * 0.3);
+        ctx.fillRect(width * 0.05, height * 0.45, width * 0.9, 12);
       }
 
-      const grad = ctx.createRadialGradient(width/2, height/2, width*0.3, width/2, height/2, width*0.7);
+      // Presenter Character Silhouette / Overlay on Porch
+      ctx.save();
+      const mouthMove = Math.abs(Math.sin(t * 12)) * 6;
+      ctx.fillStyle = '#1e293b';
+      // Head
+      ctx.beginPath();
+      ctx.arc(width * 0.35, height * 0.45, 28, 0, Math.PI * 2);
+      ctx.fill();
+      // Shoulders/Torso
+      ctx.beginPath();
+      ctx.ellipse(width * 0.35, height * 0.70, 50, 80, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Animated Talking Mouth
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.ellipse(width * 0.35, height * 0.47, 6, 2 + mouthMove / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Atmospheric Vignette
+      const grad = ctx.createRadialGradient(width / 2, height / 2, width * 0.3, width / 2, height / 2, width * 0.75);
       grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.5)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
     } else if (t < 5.5) {
-      // SCENE 2: Farm pasture with RAM sticks
+      // SCENE 2: Organic Farm Pasture with RAM Sticks (2.5s - 5.5s)
       if (spokenSceneRef.current !== 2 && isPlaying) {
         spokenSceneRef.current = 2;
         speakLine("Here at Zyncast CFO, all our code is organic, cage-free, and straight to you.");
@@ -231,6 +295,7 @@ export default function VideoGeneratorView() {
 
       const img = imgScene2Ref.current;
       const sceneProgress = (t - 2.5) / 3.0;
+
       if (img && img.complete && img.naturalWidth > 0) {
         const panX = -sceneProgress * (width * 0.03);
         const scale = 1.02 + Math.sin(sceneProgress * Math.PI) * 0.02;
@@ -238,23 +303,119 @@ export default function VideoGeneratorView() {
         const h = height * scale;
         ctx.drawImage(img, panX, (height - h) / 2, w, h);
       } else {
-        ctx.fillStyle = '#15803d';
-        ctx.fillRect(0, 0, width, height);
+        // Procedural Green Pasture Background
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height * 0.5);
+        skyGrad.addColorStop(0, '#38bdf8');
+        skyGrad.addColorStop(1, '#bae6fd');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height * 0.5);
+
+        // Fluffy Clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        const cloudX = ((t * 20) % (width + 200)) - 100;
+        ctx.beginPath();
+        ctx.arc(cloudX, height * 0.15, 30, 0, Math.PI * 2);
+        ctx.arc(cloudX + 35, height * 0.12, 40, 0, Math.PI * 2);
+        ctx.arc(cloudX + 70, height * 0.15, 30, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Rolling Pasture Hills
+        const hillGrad1 = ctx.createLinearGradient(0, height * 0.3, 0, height);
+        hillGrad1.addColorStop(0, '#22c55e');
+        hillGrad1.addColorStop(1, '#15803d');
+        ctx.fillStyle = hillGrad1;
+        ctx.beginPath();
+        ctx.moveTo(0, height * 0.45);
+        ctx.bezierCurveTo(width * 0.3, height * 0.35, width * 0.7, height * 0.5, width, height * 0.42);
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Winding Farm Path
+        ctx.fillStyle = '#d97706';
+        ctx.beginPath();
+        ctx.moveTo(width * 0.45, height * 0.45);
+        ctx.quadraticCurveTo(width * 0.5, height * 0.6, width * 0.2, height);
+        ctx.lineTo(width * 0.5, height);
+        ctx.quadraticCurveTo(width * 0.6, height * 0.6, width * 0.55, height * 0.45);
+        ctx.closePath();
+        ctx.fill();
       }
 
+      // DRAW CARTOON RAM STICK SHEEP TROTTING ACROSS PASTURE
       ctx.save();
-      const ramPulse = (Math.sin(t * 8) + 1) / 2;
-      ctx.fillStyle = `rgba(56, 189, 248, ${0.4 + ramPulse * 0.4})`;
-      ctx.shadowColor = '#0284c7';
-      ctx.shadowBlur = 15;
-      ctx.beginPath();
-      ctx.arc(width * 0.22, height * 0.58, 6, 0, Math.PI * 2);
-      ctx.arc(width * 0.78, height * 0.55, 6, 0, Math.PI * 2);
-      ctx.fill();
+      const numRamSheep = 3;
+      for (let i = 0; i < numRamSheep; i++) {
+        const offset = i * 1.2;
+        const sheepTime = (t - 2.5 + offset) % 3.0;
+        const bounce = Math.abs(Math.sin(sheepTime * 10)) * 14;
+        const sheepX = width * 0.15 + i * (width * 0.26) + Math.sin(sheepTime * 2) * 20;
+        const sheepY = height * 0.55 + (i % 2) * 35 - bounce;
+
+        // RAM Stick Body (Green PCB Board)
+        ctx.fillStyle = '#065f46';
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(sheepX - 40, sheepY - 20, 80, 36, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // Black Memory Chip Modules
+        ctx.fillStyle = '#0f172a';
+        for (let c = 0; c < 4; c++) {
+          ctx.fillRect(sheepX - 34 + c * 18, sheepY - 14, 12, 16);
+        }
+
+        // Gold Connector Pins at Bottom
+        ctx.fillStyle = '#fbbf24';
+        for (let p = 0; p < 12; p++) {
+          ctx.fillRect(sheepX - 36 + p * 6, sheepY + 12, 4, 6);
+        }
+
+        // Cute Fluffy Sheep Head & Ears
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(sheepX + 38, sheepY - 8, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sheep Ear
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.ellipse(sheepX + 30, sheepY - 16, 8, 4, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Blinking LED Eyes
+        const blink = Math.sin(t * 15) > 0.8 ? 1 : 3;
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#0284c7';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(sheepX + 42, sheepY - 10, blink, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Tiny Walking Legs
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 4;
+        const legAngle = Math.sin(sheepTime * 12) * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(sheepX - 20, sheepY + 18);
+        ctx.lineTo(sheepX - 20 + Math.sin(legAngle) * 8, sheepY + 30);
+        ctx.moveTo(sheepX + 20, sheepY + 18);
+        ctx.lineTo(sheepX + 20 - Math.sin(legAngle) * 8, sheepY + 30);
+        ctx.stroke();
+
+        // Label Tag above RAM Stick
+        ctx.fillStyle = '#0284c7';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(`DDR5 RAM #${i + 1}`, sheepX - 22, sheepY - 26);
+      }
       ctx.restore();
 
     } else {
-      // SCENE 3: Close-up face + Graphic Overlay
+      // SCENE 3: Studio Call to Action & Graphic Overlay (5.5s - 8.0s)
       if (spokenSceneRef.current !== 3 && isPlaying) {
         spokenSceneRef.current = 3;
         speakLine("Zyncast CFO is the all in one real business tool for all business owners. Check us out for a free trial.");
@@ -262,35 +423,91 @@ export default function VideoGeneratorView() {
 
       const img = imgScene3Ref.current;
       const sceneProgress = (t - 5.5) / 2.5;
+
       if (img && img.complete && img.naturalWidth > 0) {
         const scale = 1.0 + sceneProgress * 0.03;
         const w = width * scale;
         const h = height * scale;
         ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
       } else {
-        ctx.fillStyle = '#0f172a';
+        // Procedural Studio Gradient
+        const studioGrad = ctx.createRadialGradient(width / 2, height / 2, 50, width / 2, height / 2, width * 0.8);
+        studioGrad.addColorStop(0, '#1e1b4b');
+        studioGrad.addColorStop(0.6, '#0f172a');
+        studioGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = studioGrad;
         ctx.fillRect(0, 0, width, height);
+
+        // Ambient Mesh Particles
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
+        for (let p = 0; p < 15; p++) {
+          const px = (width * 0.1 + p * 55 + Math.sin(t + p) * 20) % width;
+          const py = (height * 0.2 + (p * 37) % (height * 0.6));
+          ctx.beginPath();
+          ctx.arc(px, py, 4 + (p % 4), 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
+      // HIGH-TECH GLASSMORPHIC CTA CARD OVERLAY
       ctx.save();
       ctx.textAlign = 'center';
-      
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-      ctx.fillRect(width * 0.15, height * 0.35, width * 0.7, height * 0.42);
 
-      ctx.font = '900 52px sans-serif';
+      // Card Background Glass
+      const cardW = width * 0.72;
+      const cardH = height * 0.58;
+      const cardX = (width - cardW) / 2;
+      const cardY = (height - cardH) / 2;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, cardH, 20);
+      ctx.fill();
+
+      // Glowing Card Border
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#818cf8';
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+
+      // Title Text
+      ctx.font = '900 48px sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0,0,0,0.9)';
-      ctx.shadowBlur = 14;
-      ctx.fillText('Zyncast CFO', width / 2, height * 0.48);
+      ctx.shadowBlur = 12;
+      ctx.fillText('Zyncast CFO', width / 2, cardY + 64);
 
-      ctx.font = '600 24px sans-serif';
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillText('The all-in-one real business tool', width / 2, height * 0.60);
+      // Subtitle
+      ctx.font = '600 22px sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.shadowBlur = 0;
+      ctx.fillText('The All-in-One Real Business Growth Platform', width / 2, cardY + 104);
 
-      ctx.font = '500 20px sans-serif';
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillText('Check us out for a free trial', width / 2, height * 0.70);
+      // Feature Checkmarks
+      ctx.font = '500 16px sans-serif';
+      ctx.fillStyle = '#34d399';
+      ctx.fillText('✔ Organic, Cage-Free Code   ✔ Automated CFO Intelligence   ✔ Instant Setup', width / 2, cardY + 145);
+
+      // Animated CTA Button
+      const pulse = Math.sin(t * 6) * 3;
+      const btnW = 320 + pulse * 2;
+      const btnH = 48;
+      const btnX = (width - btnW) / 2;
+      const btnY = cardY + 175;
+
+      const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY);
+      btnGrad.addColorStop(0, '#4f46e5');
+      btnGrad.addColorStop(1, '#9333ea');
+
+      ctx.fillStyle = btnGrad;
+      ctx.beginPath();
+      ctx.roundRect(btnX, btnY, btnW, btnH, 24);
+      ctx.fill();
+
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Start Free Trial — zynads.zyncastcfo.com', width / 2, btnY + 31);
 
       ctx.restore();
     }
@@ -1137,6 +1354,15 @@ export default function VideoGeneratorView() {
             </div>
 
             <div className="flex items-center gap-2">
+              <a
+                href="https://zynads.zyncastcfo.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-300 hover:text-white font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all shadow-md"
+              >
+                Zynads
+              </a>
+
               <button
                 type="button"
                 onClick={() => setNotice('Share link copied to clipboard')}

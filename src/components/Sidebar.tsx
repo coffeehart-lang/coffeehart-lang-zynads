@@ -44,13 +44,13 @@ export default function Sidebar({
             <div id="logo-icon" className="p-2 bg-gradient-to-tr from-indigo-600 via-blue-600 to-emerald-500 rounded-xl text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Megaphone className="w-5 h-5" />
             </div>
-            <div>
+            <a href="https://zynads.zyncastcfo.com" target="_blank" rel="noopener noreferrer" className="block hover:opacity-90 transition-opacity">
               <h1 id="brand-title" className="font-sans font-bold text-lg tracking-tight leading-none text-white flex items-center gap-1.5">
-                Zyn<span className="text-indigo-400 font-extrabold">Suite</span>
+                Zyn<span className="text-indigo-400 font-extrabold">Ads</span>
                 <span className="text-[9px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/80 px-1.5 py-0.5 rounded">ALL-IN-ONE</span>
               </h1>
               <span id="brand-subtitle" className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block mt-0.5">BUSINESS GROWTH PLATFORM</span>
-            </div>
+            </a>
           </div>
           {onClose && (
             <button 
@@ -201,8 +201,11 @@ export default function Sidebar({
             {isPrivacyMode ? 'ON' : 'OFF'}
           </span>
         </button>
-        <p className="text-[10px] font-mono text-slate-500 text-center">
-          ZynAds Platform &copy; 2026
+        <p className="text-[10px] font-mono text-slate-500 text-center flex items-center justify-center gap-1">
+          <span>Platform &copy; 2026 — </span>
+          <a href="https://zynads.zyncastcfo.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 font-bold underline">
+            Zynads
+          </a>
         </p>
       </div>
     </aside>
