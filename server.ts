@@ -1,10 +1,17 @@
 /**
- * Copyright (c) 2026 Coffeehart / ZynAds / Zencast. All Rights Reserved.
- * Proprietary and Confidential.
- * 
- * Unauthorized copying, distribution, or reproduction of this software via any medium
- * is strictly prohibited without explicit written permission from the copyright owner.
- * Contact: coffeehart@gmail.com
+ * Copyright 2026 coffeehart / ZynAds / Zencast
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import express from "express";
@@ -248,8 +255,13 @@ Respond with ONLY a strict JSON object with these exact keys:
               }
             }
           }
-        } catch (imgErr) {
-          console.warn("Gemini Image generation call failed, falling back to Gemini text descriptor + studio preset image:", imgErr);
+        } catch (imgErr: any) {
+          const errMsg = imgErr?.message || String(imgErr);
+          if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            console.log("Info: Gemini image model requires paid API key quota; using studio preset fallback.");
+          } else {
+            console.log("Backdrop generation fallback info:", errMsg);
+          }
         }
 
         const aiPrompt = `You are an expert virtual set designer and broadcast studio lighting director.
@@ -359,14 +371,35 @@ Respond with ONLY a strict JSON object with these exact keys:
             }
           }
         } catch (err: any) {
-          console.warn("Gemini generate-image API error:", err);
+          const errMsg = err?.message || String(err);
+          if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+            console.log("Info: Gemini image generation requires paid API key quota; using studio keyword fallback.");
+          } else {
+            console.log("Generate image fallback info:", errMsg);
+          }
         }
       }
 
-      // High-quality studio image fallback URL
+      // High-quality studio image keyword fallback
+      let fallbackUrl = "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=1920&q=80";
+      const lower = (prompt || '').toLowerCase();
+      if (lower.includes('farm') || lower.includes('pasture') || lower.includes('porch') || lower.includes('grass')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1920&q=80";
+      } else if (lower.includes('ram') || lower.includes('server') || lower.includes('chip') || lower.includes('tech') || lower.includes('code')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1920&q=80";
+      } else if (lower.includes('cyber') || lower.includes('neon') || lower.includes('tokyo')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80";
+      } else if (lower.includes('office') || lower.includes('executive') || lower.includes('business')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80";
+      } else if (lower.includes('car') || lower.includes('vehicle')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=80";
+      } else if (lower.includes('food') || lower.includes('restaurant') || lower.includes('dish')) {
+        fallbackUrl = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1920&q=80";
+      }
+
       return res.json({
         success: true,
-        imageUrl: `https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=1920&q=80`
+        imageUrl: fallbackUrl
       });
     } catch (err: any) {
       console.error("Generate Image Error:", err);

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AdCreativeAsset } from '../types';
 import { INITIAL_CREATIVES } from '../data';
 import { 
@@ -43,6 +43,116 @@ export interface UserAsset {
   tags: string[];
   isProjectActive: boolean;
   tagSymbol?: string;
+}
+
+export interface RobustVideoPlayerProps {
+  src: string;
+  poster?: string;
+  autoPlay?: boolean;
+  controls?: boolean;
+  playsInline?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  preload?: string;
+  className?: string;
+  onTimeUpdate?: () => void;
+  onLoadedMetadata?: () => void;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
+}
+
+export function RobustVideoPlayer({
+  src,
+  poster,
+  autoPlay = true,
+  controls = true,
+  playsInline = true,
+  muted = false,
+  loop = true,
+  preload = 'auto',
+  className = 'w-full h-full object-cover',
+  onTimeUpdate,
+  onLoadedMetadata,
+  videoRef
+}: RobustVideoPlayerProps) {
+  const localRef = useRef<HTMLVideoElement>(null);
+  const activeRef = videoRef || localRef;
+  const [hasError, setHasError] = useState(false);
+  const [isBlockedByAutoplay, setIsBlockedByAutoplay] = useState(false);
+  const [isMutedState, setIsMutedState] = useState(muted);
+
+  useEffect(() => {
+    setHasError(false);
+    setIsBlockedByAutoplay(false);
+    const video = activeRef.current;
+    if (video && src) {
+      video.muted = isMutedState;
+      if (autoPlay) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn("Autoplay with sound was prevented by browser policy:", err);
+            setIsBlockedByAutoplay(true);
+          });
+        }
+      }
+    }
+  }, [src, isMutedState, autoPlay]);
+
+  const handleManualPlayWithSound = () => {
+    const video = activeRef.current;
+    if (video) {
+      video.muted = false;
+      setIsMutedState(false);
+      video.play().then(() => {
+        setIsBlockedByAutoplay(false);
+      }).catch(err => {
+        console.error("Manual video play error:", err);
+      });
+    }
+  };
+
+  if (!src || hasError) {
+    return (
+      <div className="w-full h-full bg-slate-900 border border-slate-800 rounded-xl flex flex-col items-center justify-center p-4 text-center space-y-2">
+        <FileVideo className="w-8 h-8 text-rose-400 animate-bounce" />
+        <p className="text-xs font-bold text-slate-200">Video format streaming check</p>
+        <p className="text-[10px] text-slate-400">Please select or upload a standard MP4 or WebM video file.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center group">
+      <video
+        ref={activeRef}
+        src={src}
+        poster={poster}
+        autoPlay={autoPlay}
+        controls={controls}
+        playsInline={playsInline}
+        preload="auto"
+        loop={loop}
+        muted={isMutedState}
+        onTimeUpdate={onTimeUpdate}
+        onLoadedMetadata={onLoadedMetadata}
+        onError={() => setHasError(true)}
+        className={className}
+      />
+
+      {isBlockedByAutoplay && (
+        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center p-3 z-20 space-y-2">
+          <button
+            type="button"
+            onClick={handleManualPlayWithSound}
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-xl flex items-center gap-2 transition-transform hover:scale-105 cursor-pointer"
+          >
+            <Play className="w-4 h-4 fill-slate-950" /> Click to Unmute & Play Video with Sound
+          </button>
+          <span className="text-[10px] text-slate-300 font-mono">Browser sound policy enabled</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CreativesView() {
@@ -138,13 +248,19 @@ export default function CreativesView() {
         aspectRatio: '16:9',
         uploadedAt: 'Just now',
         tags: ['custom-upload', fileType],
-        isProjectActive: idx === 0 && userAssets.filter(a => a.isProjectActive).length === 0,
+        isProjectActive: idx === 0, // Make the newly uploaded file active!
         tagSymbol: `@img-${count}`
       });
     });
 
-    setUserAssets(prev => [...newUploadedAssets, ...prev]);
-    setAssetNotice(`✨ Successfully uploaded ${newUploadedAssets.length} asset(s) to My Assets library!`);
+    setUserAssets(prev => [
+      ...newUploadedAssets,
+      ...prev.map(a => ({
+        ...a,
+        isProjectActive: newUploadedAssets.length > 0 ? false : a.isProjectActive
+      }))
+    ]);
+    setAssetNotice(`✨ Uploaded ${newUploadedAssets.length} video/media asset(s)! Active media updated.`);
     setTimeout(() => setAssetNotice(null), 4000);
   };
 
@@ -482,13 +598,20 @@ export default function CreativesView() {
           {selectedActiveAsset && (
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/50 rounded-2xl p-4 sm:p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="relative w-24 h-16 bg-black rounded-xl border border-indigo-400/40 overflow-hidden shrink-0">
+                <div className="relative w-32 h-20 bg-black rounded-xl border border-indigo-400/40 overflow-hidden shrink-0">
                   {selectedActiveAsset.type === 'video' ? (
-                    <video src={selectedActiveAsset.url} className="w-full h-full object-cover" muted loop autoPlay />
+                    <RobustVideoPlayer
+                      src={selectedActiveAsset.url}
+                      autoPlay
+                      controls
+                      playsInline
+                      muted={false}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <img src={selectedActiveAsset.url} alt={selectedActiveAsset.name} className="w-full h-full object-cover" />
                   )}
-                  <div className="absolute top-1 left-1 bg-indigo-600 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white shadow-xs">
+                  <div className="absolute top-1 left-1 bg-indigo-600 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white shadow-xs z-10">
                     {selectedActiveAsset.tagSymbol || '@active'}
                   </div>
                 </div>
@@ -512,15 +635,15 @@ export default function CreativesView() {
                   <button
                     type="button"
                     onClick={() => handlePreviewUserVideo(selectedActiveAsset)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg border border-indigo-400/30 flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
-                    <Scissors className="w-3.5 h-3.5 text-cyan-400" /> Trim & Adjust Speed
+                    <Scissors className="w-3.5 h-3.5 text-cyan-300" /> Trim & Adjust Speed
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => handleCopy(selectedActiveAsset.url, 'active-url')}
-                  className="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700"
                 >
                   {copiedId === 'active-url' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
                   Copy Asset URL
@@ -627,13 +750,15 @@ export default function CreativesView() {
                       </div>
 
                       {/* Media Display Box */}
-                      <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden h-40 flex items-center justify-center group">
+                      <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden h-48 flex items-center justify-center group">
                         {asset.type === 'video' ? (
-                          <video
+                          <RobustVideoPlayer
                             src={asset.url}
                             controls
-                            muted
-                            loop
+                            playsInline
+                            preload="auto"
+                            muted={false}
+                            autoPlay={false}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -645,7 +770,7 @@ export default function CreativesView() {
                         )}
 
                         {asset.duration && (
-                          <span className="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold">
+                          <span className="absolute bottom-2 right-2 bg-black/80 text-white font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold pointer-events-none z-10">
                             {asset.duration}
                           </span>
                         )}
@@ -1092,8 +1217,11 @@ export default function CreativesView() {
               <div className="relative bg-black rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group">
                 <video
                   ref={modalVideoRef}
-                  src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                  src={(previewAsset as any)?.url || (selectedActiveAsset as any)?.url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'}
                   autoPlay={isPreviewPlaying}
+                  controls
+                  playsInline
+                  preload="auto"
                   loop
                   muted={isMuted}
                   onTimeUpdate={handleVideoTimeUpdate}

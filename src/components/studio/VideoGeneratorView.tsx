@@ -28,6 +28,8 @@ import {
   Bot
 } from 'lucide-react';
 
+import { expandPrompt } from '../../utils/promptEnhancer';
+
 interface AssetReference {
   id: string;
   tag: string;
@@ -35,22 +37,57 @@ interface AssetReference {
   url: string;
 }
 
+const k2Checkpoints = {
+  oss_raw: 'OSS Raw Checkpoint (28-step DiT)',
+  oss_turbo: 'OSS Turbo Checkpoint (Distilled Fast DiT)',
+};
+
 export default function VideoGeneratorView() {
-  const [selectedModel, setSelectedModel] = useState<string>('Seedance 2.5');
+  const [selectedModel, setSelectedModel] = useState<string>('Krea 2 (K2 - SingleMMDiT)');
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4K'>('720p');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16' | '1:1' | '21:9'>('16:9');
   const [durationSecs, setDurationSecs] = useState<number>(21);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [renderMode, setRenderMode] = useState<'production' | 'draft'>('production');
 
+  // K2 (Krea 2) SingleMMDiT Architecture Tuning State
+  const [k2Steps, setK2Steps] = useState<number>(28);
+  const [k2Cfg, setK2Cfg] = useState<number>(4.5);
+  const [k2Y1, setK2Y1] = useState<number>(0.5);
+  const [k2Y2, setK2Y2] = useState<number>(1.15);
+  const [showK2Params, setShowK2Params] = useState<boolean>(true);
+  const [showK2ArchInspector, setShowK2ArchInspector] = useState<boolean>(false);
+  const [activeK2Ckpt, setActiveK2Ckpt] = useState<'oss_raw' | 'oss_turbo'>('oss_raw');
+
+  // Video Evaluation & Benchmarking Config (MovieGen / Causal DiT)
+  const [promptBench, setPromptBench] = useState<string>('MovieGenVideoBench');
+  const [evalFirstN, setEvalFirstN] = useState<number>(64);
+  const [numFrames, setNumFrames] = useState<number>(81);
+  const [frameWidth, setFrameWidth] = useState<number>(832);
+  const [frameHeight, setFrameHeight] = useState<number>(480);
+  const [isCausal, setIsCausal] = useState<boolean>(true);
+  const [numTrainingFrames, setNumTrainingFrames] = useState<number>(21);
+  const [weightDecay, setWeightDecay] = useState<number>(0.01);
+  const [sameStepBlocks, setSameStepBlocks] = useState<boolean>(true);
+  const [indepFirstFrame, setIndepFirstFrame] = useState<boolean>(false);
+
+  // Wan 2.1 Image-to-Video (WanI2V) Pipeline Configuration
+  const [wanShift, setWanShift] = useState<number>(5.0);
+  const [wanSolver, setWanSolver] = useState<'unipc' | 'dpm++'>('unipc');
+  const [wanSamplingSteps, setWanSamplingSteps] = useState<number>(40);
+  const [wanGuideScale, setWanGuideScale] = useState<number>(5.0);
+  const [wanOffloadModel, setWanOffloadModel] = useState<boolean>(true);
+  const [wanUseUsp, setWanUseUsp] = useState<boolean>(false);
+
   // Active Tool Mode in Sidebar matching Krea AI
   const [activeStudioTool, setActiveStudioTool] = useState<'video' | 'image' | 'enhancer' | 'nanobanana' | 'realtime' | 'edit'>('video');
 
   // Video playback time state (0.0 to 6.0 seconds)
   const [videoTime, setVideoTime] = useState<number>(0.0);
-  const maxVideoDuration = 6.0; // exact duration of commercial
+  const timeRef = useRef<number>(0.0);
+  const maxVideoDuration = 8.0; // exact duration of commercial
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   // Keyframe image attachments
@@ -116,20 +153,29 @@ export default function VideoGeneratorView() {
     imgScene3Ref.current = s3;
   }, []);
 
-  // Speech Narration Triggering for Commercial Script
+  // Speech & Audio Narration Triggering for Commercial Script
   const speakLine = useCallback((text: string) => {
-    if (isMuted || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (isMuted || typeof window === 'undefined') return;
     try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
-      utterance.pitch = 1.0;
-      const voices = window.speechSynthesis.getVoices();
-      const maleVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Male') || v.name.includes('Natural') || v.name.includes('David') || v.name.includes('Google')));
-      if (maleVoice) utterance.voice = maleVoice;
-      window.speechSynthesis.speak(utterance);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        // Phonetically format acronyms for crisp speech synthesis pronunciation
+        const phoneticText = text
+          .replace(/Zyncast CFO/gi, "Zincast C. F. O.")
+          .replace(/Zyncastcfo/gi, "Zincast C. F. O.")
+          .replace(/Zyncastcf/gi, "Zincast C. F. O.")
+          .replace(/RAM/g, "Ram");
+
+        const utterance = new SpeechSynthesisUtterance(phoneticText);
+        utterance.rate = 0.95; // Steady, clear pacing
+        utterance.pitch = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('David') || v.name.includes('Samantha')));
+        if (preferredVoice) utterance.voice = preferredVoice;
+        window.speechSynthesis.speak(utterance);
+      }
     } catch (e) {
-      console.warn('Speech error:', e);
+      console.warn('Speech/Audio error:', e);
     }
   }, [isMuted]);
 
@@ -145,7 +191,7 @@ export default function VideoGeneratorView() {
 
     ctx.clearRect(0, 0, width, height);
 
-    if (t < 1.5) {
+    if (t < 2.5) {
       // SCENE 1: Porch intro
       if (spokenSceneRef.current !== 1 && isPlaying) {
         spokenSceneRef.current = 1;
@@ -154,7 +200,7 @@ export default function VideoGeneratorView() {
 
       const img = imgScene1Ref.current;
       if (img && img.complete && img.naturalWidth > 0) {
-        const scale = 1.0 + (t / 1.5) * 0.04;
+        const scale = 1.0 + (t / 2.5) * 0.04;
         const w = width * scale;
         const h = height * scale;
         const x = (width - w) / 2;
@@ -171,7 +217,7 @@ export default function VideoGeneratorView() {
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
-    } else if (t < 4.5) {
+    } else if (t < 5.5) {
       // SCENE 2: Farm pasture with RAM sticks
       if (spokenSceneRef.current !== 2 && isPlaying) {
         spokenSceneRef.current = 2;
@@ -179,7 +225,7 @@ export default function VideoGeneratorView() {
       }
 
       const img = imgScene2Ref.current;
-      const sceneProgress = (t - 1.5) / 3.0;
+      const sceneProgress = (t - 2.5) / 3.0;
       if (img && img.complete && img.naturalWidth > 0) {
         const panX = -sceneProgress * (width * 0.03);
         const scale = 1.02 + Math.sin(sceneProgress * Math.PI) * 0.02;
@@ -206,11 +252,11 @@ export default function VideoGeneratorView() {
       // SCENE 3: Close-up face + Graphic Overlay
       if (spokenSceneRef.current !== 3 && isPlaying) {
         spokenSceneRef.current = 3;
-        speakLine("for all business owners. Check us out for a free trial.");
+        speakLine("Zyncast CFO is the all in one real business tool for all business owners. Check us out for a free trial.");
       }
 
       const img = imgScene3Ref.current;
-      const sceneProgress = (t - 4.5) / 1.5;
+      const sceneProgress = (t - 5.5) / 2.5;
       if (img && img.complete && img.naturalWidth > 0) {
         const scale = 1.0 + sceneProgress * 0.03;
         const w = width * scale;
@@ -224,21 +270,21 @@ export default function VideoGeneratorView() {
       ctx.save();
       ctx.textAlign = 'center';
       
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.fillRect(width * 0.2, height * 0.38, width * 0.6, height * 0.38);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.fillRect(width * 0.15, height * 0.35, width * 0.7, height * 0.42);
 
-      ctx.font = '900 48px sans-serif';
+      ctx.font = '900 52px sans-serif';
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 12;
-      ctx.fillText('Zyncastcf', width / 2, height * 0.50);
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 14;
+      ctx.fillText('Zyncast CFO', width / 2, height * 0.48);
 
       ctx.font = '600 24px sans-serif';
       ctx.fillStyle = '#f8fafc';
-      ctx.fillText('The all-in-one real business tool', width / 2, height * 0.61);
+      ctx.fillText('The all-in-one real business tool', width / 2, height * 0.60);
 
       ctx.font = '500 20px sans-serif';
-      ctx.fillStyle = '#e2e8f0';
+      ctx.fillStyle = '#fbbf24';
       ctx.fillText('Check us out for a free trial', width / 2, height * 0.70);
 
       ctx.restore();
@@ -246,36 +292,34 @@ export default function VideoGeneratorView() {
 
   }, [isPlaying, speakLine]);
 
-  // Main Playback Timer Loop
+  // Main Playback Timer Loop using timeRef for smooth 60fps playback
   useEffect(() => {
     let animationId: number;
+    let lastRenderTime = performance.now();
 
     const renderLoop = (now: number) => {
-      const delta = (now - lastTimeRef.current) / 1000;
-      lastTimeRef.current = now;
+      const delta = (now - lastRenderTime) / 1000;
+      lastRenderTime = now;
 
       if (isPlaying && !isGenerating) {
-        setVideoTime(prev => {
-          let nextTime = prev + delta * playbackSpeed;
-          if (nextTime >= maxVideoDuration) {
-            nextTime = 0.0;
-            spokenSceneRef.current = -1;
-          }
-          return nextTime;
-        });
+        timeRef.current += delta * playbackSpeed;
+        if (timeRef.current >= maxVideoDuration) {
+          timeRef.current = 0.0;
+          spokenSceneRef.current = -1;
+        }
+        setVideoTime(timeRef.current);
       }
 
-      drawFrame(videoTime);
+      drawFrame(timeRef.current);
       animationId = requestAnimationFrame(renderLoop);
     };
 
-    lastTimeRef.current = performance.now();
     animationId = requestAnimationFrame(renderLoop);
 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPlaying, isGenerating, playbackSpeed, videoTime, drawFrame]);
+  }, [isPlaying, isGenerating, playbackSpeed, drawFrame]);
 
   const handleInsertTag = (tag: string) => {
     setPrompt(prev => prev + ` ${tag} `);
@@ -393,6 +437,7 @@ export default function VideoGeneratorView() {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newT = parseFloat(e.target.value);
+    timeRef.current = newT;
     setVideoTime(newT);
     spokenSceneRef.current = -1;
     drawFrame(newT);
@@ -405,9 +450,9 @@ export default function VideoGeneratorView() {
   };
 
   const getCurrentTranscript = () => {
-    if (videoTime < 1.5) return '"Do you know where your code comes from?"';
-    if (videoTime < 4.5) return '"Here at Zyncast CFO, all our code is organic, cage-free, and straight to you."';
-    return '"Zyncastcf: The all-in-one real business tool. Check us out for a free trial."';
+    if (videoTime < 2.5) return '"Do you know where your code comes from?"';
+    if (videoTime < 5.5) return '"Here at Zyncast CFO, all our code is organic, cage-free, and straight to you."';
+    return '"Zyncast CFO: The all-in-one real business tool. Check us out for a free trial."';
   };
 
   return (
@@ -570,6 +615,10 @@ export default function VideoGeneratorView() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="bg-[#12141a] text-sm font-extrabold text-white pr-8 py-1.5 px-3.5 rounded-xl border border-slate-800 focus:outline-none cursor-pointer appearance-none flex items-center gap-1 shadow-sm hover:border-slate-700 transition-colors"
               >
+                <option value="Krea 2 (K2 - SingleMMDiT)">⚡ Krea 2 (K2 - SingleMMDiT)</option>
+                <option value="Krea 2 Turbo (K2 Wide MMDiT)">🚀 Krea 2 Turbo (K2 Wide)</option>
+                <option value="Wan 2.1 T2V (WanModel DiT)">🌊 Wan 2.1 T2V (WanModel DiT)</option>
+                <option value="Wan 2.1 I2V (WanModel DiT)">🖼️ Wan 2.1 I2V (WanModel DiT)</option>
                 <option value="Seedance 2.5">Seedance 2.5</option>
                 <option value="Nano Banana Pro 2.5">🍌 Nano Banana Pro 2.5</option>
                 <option value="MiniMax H3">MiniMax H3</option>
@@ -583,6 +632,17 @@ export default function VideoGeneratorView() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowK2Params(!showK2Params)}
+              className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+                showK2Params 
+                  ? 'bg-indigo-950 text-indigo-300 border-indigo-700/80 shadow-sm' 
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5 text-indigo-400" />
+              K2 DiT Controls
+            </button>
+            <button
               onClick={() => setRenderMode(prev => prev === 'production' ? 'draft' : 'production')}
               className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800/80"
             >
@@ -590,6 +650,269 @@ export default function VideoGeneratorView() {
             </button>
           </div>
         </div>
+
+        {/* KREA 2 (K2) SINGLE MMDIT TUNING PANEL */}
+        {showK2Params && (
+          <div className="bg-[#12141c] border border-indigo-900/60 rounded-2xl p-4 space-y-3.5 shadow-2xl animate-fadeIn">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-900/40 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-950 rounded-lg border border-indigo-700/60 text-indigo-400">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-white font-mono tracking-wide flex items-center gap-2">
+                    Krea 2 (K2) SingleMMDiT Pipeline Architecture
+                    <span className="bg-indigo-900/80 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded border border-indigo-700 font-mono">
+                      PyTorch 2.9+ / bfloat16
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    features: 6144 | heads: 48 | kvheads: 12 | layers: 28 | channels: 16 | Qwen3-VL-4B
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+                {/* Checkpoint selector */}
+                <div className="flex items-center gap-1 bg-[#181a24] p-1 rounded-lg border border-slate-800">
+                  <button
+                    onClick={() => setActiveK2Ckpt('oss_raw')}
+                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                      activeK2Ckpt === 'oss_raw'
+                        ? 'bg-amber-500 text-black font-extrabold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    oss_raw (28 steps)
+                  </button>
+                  <button
+                    onClick={() => setActiveK2Ckpt('oss_turbo')}
+                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                      activeK2Ckpt === 'oss_turbo'
+                        ? 'bg-amber-500 text-black font-extrabold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    oss_turbo (Distilled)
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setShowK2ArchInspector(!showK2ArchInspector)}
+                  className="bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-700/60 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3 text-indigo-300" />
+                  {showK2ArchInspector ? 'Hide Graph' : 'Inspect Tensor Graph'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+              <div className="bg-[#181a24] p-2.5 rounded-xl border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+                  <span>Denoising Steps</span>
+                  <span className="text-amber-400">{k2Steps}</span>
+                </div>
+                <input
+                  type="range"
+                  min="4"
+                  max="50"
+                  value={k2Steps}
+                  onChange={(e) => setK2Steps(parseInt(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
+              </div>
+
+              <div className="bg-[#181a24] p-2.5 rounded-xl border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+                  <span>CFG Scale</span>
+                  <span className="text-emerald-400">{k2Cfg.toFixed(1)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="12"
+                  step="0.5"
+                  value={k2Cfg}
+                  onChange={(e) => setK2Cfg(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                />
+              </div>
+
+              <div className="bg-[#181a24] p-2.5 rounded-xl border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+                  <span>Shift Mu (Min Res y1)</span>
+                  <span className="text-indigo-400">{k2Y1.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="2.0"
+                  step="0.05"
+                  value={k2Y1}
+                  onChange={(e) => setK2Y1(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+                />
+              </div>
+
+              <div className="bg-[#181a24] p-2.5 rounded-xl border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
+                  <span>Shift Mu (Max Res y2)</span>
+                  <span className="text-purple-400">{k2Y2.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="3.0"
+                  step="0.05"
+                  value={k2Y2}
+                  onChange={(e) => setK2Y2(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                />
+              </div>
+            </div>
+
+            {/* EXPANDABLE K2 SINGLE MMDIT TENSOR ARCHITECTURE INSPECTOR */}
+            {showK2ArchInspector && (
+              <div className="mt-3 p-3.5 bg-[#0a0b10] border border-indigo-900/80 rounded-xl space-y-3 text-xs font-mono animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-indigo-950 pb-2">
+                  <span className="text-indigo-300 font-extrabold flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-indigo-400" />
+                    SingleMMDiT Architecture & Module Pipeline Specifications
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    checkpoint: {k2Checkpoints[activeK2Ckpt] || activeK2Ckpt}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Text Conditioner */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5">
+                    <div className="text-amber-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>1. Text Conditioner</span>
+                      <span className="text-[9px] bg-amber-950 px-1.5 py-0.5 rounded text-amber-300">Qwen3-VL-4B</span>
+                    </div>
+                    <ul className="text-[10px] text-slate-300 space-y-1 leading-relaxed">
+                      <li>• <strong className="text-white">Model:</strong> Qwen/Qwen3-VL-4B-Instruct</li>
+                      <li>• <strong className="text-white">Selected Hidden Layers:</strong> (2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35)</li>
+                      <li>• <strong className="text-white">Max Text Token Length:</strong> 512 + prefix/suffix padding</li>
+                      <li>• <strong className="text-white">TextFusionTransformer:</strong> 2 layerwise blocks + 2 refiner blocks</li>
+                    </ul>
+                  </div>
+
+                  {/* SingleStreamDiT Backbone */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5">
+                    <div className="text-indigo-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>2. SingleStreamDiT Core</span>
+                      <span className="text-[9px] bg-indigo-950 px-1.5 py-0.5 rounded text-indigo-300">28 Blocks</span>
+                    </div>
+                    <ul className="text-[10px] text-slate-300 space-y-1 leading-relaxed">
+                      <li>• <strong className="text-white">Hidden Features:</strong> 6144 dim (48 Heads, head_dim: 128)</li>
+                      <li>• <strong className="text-white">GQA KV-Heads:</strong> 12 (4:1 Grouped Query Attention)</li>
+                      <li>• <strong className="text-white">Block Layers:</strong> DoubleSharedModulation + QKNorm RMSNorm + SwiGLU</li>
+                      <li>• <strong className="text-white">Positional Encoding:</strong> 3D RoPE (head split 20/54/54)</li>
+                    </ul>
+                  </div>
+
+                  {/* Latent Autoencoder */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5">
+                    <div className="text-emerald-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>3. QwenAutoencoder (VAE)</span>
+                      <span className="text-[9px] bg-emerald-950 px-1.5 py-0.5 rounded text-emerald-300">f8 / 16 Channels</span>
+                    </div>
+                    <ul className="text-[10px] text-slate-300 space-y-1 leading-relaxed">
+                      <li>• <strong className="text-white">VAE Subfolder:</strong> Qwen/Qwen-Image</li>
+                      <li>• <strong className="text-white">Spatial Compression:</strong> 8x spatial downsampling</li>
+                      <li>• <strong className="text-white">Latent Channels:</strong> 16 channels</li>
+                      <li>• <strong className="text-white">Normalization:</strong> latents_mean & latents_std 5D broadcasting</li>
+                    </ul>
+                  </div>
+                  {/* MovieGen / Causal Video Bench Evaluation Config */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5 md:col-span-3">
+                    <div className="text-cyan-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>4. Evaluation & Benchmarking Setup ({promptBench})</span>
+                      <span className="text-[9px] bg-cyan-950 px-1.5 py-0.5 rounded text-cyan-300 font-mono">
+                        {frameWidth}x{frameHeight} • {numFrames} frames • Causal: {isCausal ? 'True' : 'False'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[10px] text-slate-300">
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 font-bold">Prompt Bench:</span>
+                        <div className="text-white font-extrabold">{promptBench}</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 font-bold">Training Frames:</span>
+                        <div className="text-amber-300 font-extrabold">{numTrainingFrames} frames</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 font-bold">Weight Decay:</span>
+                        <div className="text-emerald-300 font-extrabold">{weightDecay}</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-0.5">
+                        <span className="text-slate-400 font-bold">Eval Samples (N):</span>
+                        <div className="text-indigo-300 font-extrabold">{evalFirstN} prompts</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Wan 2.1 Image-to-Video (WanI2V) Pipeline Specifications */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5 md:col-span-3">
+                    <div className="text-purple-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>5. Wan 2.1 Image-to-Video (WanI2V) Flow Pipeline</span>
+                      <span className="text-[9px] bg-purple-950 px-1.5 py-0.5 rounded text-purple-300 font-mono">
+                        Solver: {wanSolver === 'unipc' ? 'FlowUniPCMultistep' : 'FlowDPMSolverMultistep'} • Shift: {wanShift}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[10px] text-slate-300">
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Conditioning Encoders</div>
+                        <div>• <strong className="text-white">Text:</strong> T5EncoderModel (UMT5-XXL / fp16 or bfloat16)</div>
+                        <div>• <strong className="text-white">Visual:</strong> CLIPModel (OpenCLIP ViT-H/14)</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Latent & VAE Architecture</div>
+                        <div>• <strong className="text-white">VAE:</strong> WanVAE 3D Causal (stride: [4, 8, 8])</div>
+                        <div>• <strong className="text-white">Latent Shape:</strong> 16 x 21 x LatH x LatW (4n+1 frame sampling)</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Flow Matching Sampling</div>
+                        <div>• <strong className="text-white">Guide Scale:</strong> {wanGuideScale} (CFG)</div>
+                        <div>• <strong className="text-white">Steps:</strong> {wanSamplingSteps} | Offload to CPU: {wanOffloadModel ? 'True' : 'False'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Wan 2.1 Text-to-Video (WanT2V) Pipeline Specifications */}
+                  <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5 md:col-span-3">
+                    <div className="text-pink-400 font-bold text-[11px] flex items-center justify-between">
+                      <span>6. Wan 2.1 Text-to-Video (WanT2V) Direct Generation Pipeline</span>
+                      <span className="text-[9px] bg-pink-950 px-1.5 py-0.5 rounded text-pink-300 font-mono">
+                        Solver: {wanSolver === 'unipc' ? 'FlowUniPCMultistep' : 'FlowDPMSolverMultistep'} • Sampling Steps: 50
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[10px] text-slate-300">
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Text Conditioning</div>
+                        <div>• <strong className="text-white">Encoder:</strong> T5EncoderModel (UMT5-XXL / t5_cpu or t5_fsdp)</div>
+                        <div>• <strong className="text-white">Negative Prompt:</strong> Configurable n_prompt or sample_neg_prompt</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Target Noise Tensor</div>
+                        <div>• <strong className="text-white">Dimensions:</strong> (z_dim=16, 21, height//8, width//8)</div>
+                        <div>• <strong className="text-white">Sequence Length:</strong> Sequence parallel (sp_size) context math</div>
+                      </div>
+                      <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
+                        <div className="text-slate-400 font-bold">Flow Sampler & Offloading</div>
+                        <div>• <strong className="text-white">Guidance Scale:</strong> {wanGuideScale} CFG</div>
+                        <div>• <strong className="text-white">Memory Mgmt:</strong> Sequential GPU offload & gc.collect()</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* MAIN VIDEO DISPLAY CANVAS / PLAYER */}
         <div className="relative rounded-2xl overflow-hidden bg-[#0d0e12] border border-slate-800/90 shadow-2xl p-3 sm:p-4 space-y-3">
@@ -854,9 +1177,22 @@ export default function VideoGeneratorView() {
               rows={4}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full p-2.5 bg-transparent text-xs font-sans text-slate-200 focus:outline-none leading-relaxed resize-none font-medium"
+              className="w-full p-2.5 bg-transparent text-xs font-sans text-slate-200 focus:outline-none leading-relaxed resize-none font-medium pr-28"
               placeholder="Describe your video..."
             />
+            <button
+              type="button"
+              onClick={() => {
+                const expanded = expandPrompt(prompt);
+                setPrompt(expanded);
+                setNotice('Prompt expanded using K2 T2I Prompt Engineering rules');
+              }}
+              className="absolute top-2 right-2 px-2.5 py-1 bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-200 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+              title="Enhance & Expand Prompt with AI T2I Engineering Rules"
+            >
+              <Sparkles className="w-3 h-3 text-indigo-400" />
+              Enhance
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-800/80 text-xs">
