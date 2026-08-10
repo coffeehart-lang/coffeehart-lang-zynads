@@ -122,10 +122,10 @@ export default function App() {
           <div id="mobile-logo-icon" className="p-1.5 bg-indigo-600 rounded-md text-white flex items-center justify-center">
             <Megaphone className="w-4 h-4" />
           </div>
-          <h1 id="mobile-brand-title" className="font-sans font-bold text-base tracking-tight leading-none text-white flex items-center gap-1.5">
-            Zyn<span className="text-indigo-400 font-extrabold">Suite</span>
+          <a href="https://zynads.zyncastcfo.com" target="_blank" rel="noopener noreferrer" id="mobile-brand-title" className="font-sans font-bold text-base tracking-tight leading-none text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+            Zyn<span className="text-indigo-400 font-extrabold">Ads</span>
             <span className="text-[9px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/80 px-1.5 py-0.5 rounded">ALL-IN-ONE</span>
-          </h1>
+          </a>
         </div>
         <button
           onClick={() => setIsSidebarOpen(true)}
