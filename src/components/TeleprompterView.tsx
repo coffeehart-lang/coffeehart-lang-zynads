@@ -277,6 +277,12 @@ export const DEFAULT_PRESENTER_AVATARS: PresenterAvatarPreset[] = [
   }
 ];
 
+const formatTime = (totalSeconds: number) => {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = Math.floor(totalSeconds % 60);
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
+
 export default function TeleprompterView() {
   // Studio Suite Tool Mode Switcher (Krea AI Suite + Teleprompter Studio)
   const [studioTool, setStudioTool] = useState<'video-gen' | 'teleprompter' | 'realtime' | 'enhancer' | 'node-editor' | 'assets'>('video-gen');
@@ -1307,18 +1313,22 @@ export default function TeleprompterView() {
       if (isRecording) {
         ctx.fillStyle = 'rgba(159, 18, 57, 0.95)';
         ctx.beginPath();
-        ctx.roundRect(24, 24, 240, 42, 10);
+        ctx.roundRect(24, 24, 280, 44, 12);
         ctx.fill();
         ctx.strokeStyle = '#fda4af';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
+        const dotRadius = 5 + Math.abs(Math.sin(frame / 15)) * 3;
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(42, 46, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 13px monospace';
+        ctx.font = 'bold 14px monospace';
         ctx.textAlign = 'left';
-        const formattedSecs = String(recordingSecondsElapsed).padStart(2, '0');
-        const formattedTarget = String(targetDuration).padStart(2, '0');
-        ctx.fillText(`🔴 REC 00:${formattedSecs} / 00:${formattedTarget}`, 42, 50);
+        ctx.fillText(`REC ${formatTime(recordingSecondsElapsed)} / ${formatTime(targetDuration)}`, 56, 51);
       }
 
       // 7. Teleprompter Text Subtitle Overlay on Video (Full Bottom Center Bar - Y: 595 to 695)
@@ -2849,9 +2859,13 @@ export default function TeleprompterView() {
                 <button
                   type="button"
                   onClick={stopRecordingCommercial}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 animate-pulse cursor-pointer"
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 animate-pulse cursor-pointer border border-rose-400"
                 >
-                  <StopCircle className="w-4 h-4" /> Stop Recording ({recordingSecondsElapsed}s / {targetDuration}s)
+                  <div className="relative flex items-center justify-center w-2.5 h-2.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  </div>
+                  <StopCircle className="w-4 h-4" /> Stop REC ({formatTime(recordingSecondsElapsed)} / {formatTime(targetDuration)})
                 </button>
               ) : (
                 <button
@@ -2947,7 +2961,7 @@ export default function TeleprompterView() {
             </div>
           </div>
 
-          <div className="relative rounded-2xl border-4 border-indigo-600 bg-black overflow-hidden shadow-2xl min-h-96 aspect-video flex items-center justify-center">
+          <div className="relative rounded-2xl border-4 border-indigo-600 bg-black overflow-hidden shadow-2xl min-h-96 aspect-video flex items-center justify-center group">
             {/* Real-time Studio Canvas */}
             <canvas
               ref={canvasRef}
@@ -2955,6 +2969,52 @@ export default function TeleprompterView() {
               height={720}
               className="w-full h-full object-contain"
             />
+
+            {/* Pulsing REC Indicator & Visual Timer Overlay when Recording */}
+            {(isRecording || isGeneratingVideo) && (
+              <>
+                {/* Visual Progress Bar along top edge when Recording */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-slate-900/80 z-20 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-rose-600 transition-all duration-300 ease-linear shadow-lg"
+                    style={{
+                      width: `${Math.min(100, (recordingSecondsElapsed / Math.max(1, targetDuration)) * 100)}%`
+                    }}
+                  />
+                </div>
+
+                {/* Top-Left Pulsing REC Badge */}
+                <div className="absolute top-4 left-4 z-20 flex items-center gap-2.5">
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 bg-rose-950/90 border-2 border-rose-500/80 rounded-full text-white shadow-2xl backdrop-blur-md">
+                    <div className="relative flex items-center justify-center w-3 h-3">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75 animate-ping"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                    </div>
+                    <span className="text-xs font-mono font-black tracking-widest text-rose-100 uppercase">REC</span>
+                    <span className="text-slate-500 font-mono text-xs">|</span>
+                    <span className="text-xs font-mono font-bold text-white tracking-wider">
+                      {formatTime(recordingSecondsElapsed)}
+                    </span>
+                    <span className="text-[10px] font-mono text-rose-300/80">
+                      / {formatTime(targetDuration)}
+                    </span>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-950/80 border border-slate-800 rounded-full text-rose-300 text-[11px] font-mono backdrop-blur-md shadow-lg font-bold">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                    <span>LIVE COMMERCIAL RECORDING</span>
+                  </div>
+                </div>
+
+                {/* Top-Right Remaining Countdown Visual Timer */}
+                <div className="absolute top-4 right-4 z-20 px-3.5 py-1.5 bg-slate-950/90 border border-rose-500/60 rounded-xl text-white font-mono text-xs backdrop-blur-md flex items-center gap-2 shadow-2xl">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">TIME LEFT:</span>
+                  <span className="text-rose-300 font-extrabold text-sm tracking-widest">
+                    {formatTime(Math.max(0, targetDuration - recordingSecondsElapsed))}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Separate Teleprompter Script Drawer (Placed Below Clean Video Viewport) */}
