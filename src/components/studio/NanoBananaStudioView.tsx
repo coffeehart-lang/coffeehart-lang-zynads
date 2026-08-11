@@ -12,8 +12,12 @@ import {
   Video,
   Volume2,
   VolumeX,
-  Maximize2
+  Maximize2,
+  Upload,
+  Image as ImageIcon,
+  Check
 } from 'lucide-react';
+import { uploadMediaFileService } from '../../services/uploadService';
 
 export default function NanoBananaStudioView() {
   const [prompt, setPrompt] = useState<string>(
@@ -31,7 +35,20 @@ export default function NanoBananaStudioView() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [loopTime, setLoopTime] = useState<number>(0);
 
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>('/images/scene2.jpg');
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Preload active scene image
+  useEffect(() => {
+    const img = new Image();
+    img.src = currentImageSrc;
+    img.onload = () => {
+      imgRef.current = img;
+    };
+    imgRef.current = img;
+  }, [currentImageSrc]);
 
   // Animation Loop for Nano Banana motion preview
   useEffect(() => {
@@ -41,22 +58,34 @@ export default function NanoBananaStudioView() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = new Image();
-    img.src = '/images/scene2.jpg';
-
-    let startTime = performance.now();
+    let lastTime = performance.now();
+    let accumulatedTime = 0;
+    let lastStateUpdateTime = 0;
 
     const render = (now: number) => {
-      const elapsed = (now - startTime) / 1000;
-      setLoopTime(elapsed % durationSecs);
+      const delta = (now - lastTime) / 1000;
+      lastTime = now;
+
+      if (isPlaying) {
+        accumulatedTime += delta;
+      }
+
+      const currentLoopTime = accumulatedTime % durationSecs;
+
+      // Throttle React state update to ~10Hz to prevent re-render thrashing
+      if (now - lastStateUpdateTime > 100) {
+        setLoopTime(currentLoopTime);
+        lastStateUpdateTime = now;
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (img.complete && img.naturalWidth > 0) {
+      const img = imgRef.current;
+      if (img && img.complete && img.naturalWidth > 0) {
         ctx.save();
         
         // Motion calculation based on cameraEffect
-        const progress = (elapsed % durationSecs) / durationSecs;
+        const progress = currentLoopTime / durationSecs;
         let scale = 1.0;
         let dx = 0;
         let dy = 0;
@@ -64,13 +93,13 @@ export default function NanoBananaStudioView() {
         if (cameraEffect === 'zoom_in') {
           scale = 1.0 + progress * (motionIntensity / 200);
         } else if (cameraEffect === 'orbit') {
-          dx = Math.sin(progress * Math.PI * 2) * 15;
-          dy = Math.cos(progress * Math.PI * 2) * 10;
+          dx = Math.sin(progress * Math.PI * 2) * (motionIntensity / 5);
+          dy = Math.cos(progress * Math.PI * 2) * (motionIntensity / 8);
         } else if (cameraEffect === 'pan_right') {
-          dx = -progress * 40;
+          dx = -progress * (motionIntensity * 0.6);
         } else if (cameraEffect === 'shake') {
-          dx = (Math.random() - 0.5) * 8;
-          dy = (Math.random() - 0.5) * 8;
+          dx = (Math.random() - 0.5) * (motionIntensity / 10);
+          dy = (Math.random() - 0.5) * (motionIntensity / 10);
         }
 
         ctx.translate(canvas.width / 2 + dx, canvas.height / 2 + dy);
@@ -79,10 +108,10 @@ export default function NanoBananaStudioView() {
         ctx.restore();
 
         // Draw particle overlay for Nano Banana Tech effect
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.6)';
-        for (let i = 0; i < 20; i++) {
-          const px = ((i * 47 + elapsed * 80) % canvas.width);
-          const py = ((i * 31 + Math.sin(elapsed + i) * 30) % canvas.height);
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.65)';
+        for (let i = 0; i < 24; i++) {
+          const px = ((i * 47 + accumulatedTime * 90) % canvas.width);
+          const py = ((i * 31 + Math.sin(accumulatedTime * 2 + i) * 35) % canvas.height);
           ctx.beginPath();
           ctx.arc(px, py, 2 + (i % 3), 0, Math.PI * 2);
           ctx.fill();
@@ -90,6 +119,9 @@ export default function NanoBananaStudioView() {
       } else {
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px sans-serif';
+        ctx.fillText('Loading Nano Banana Motion Canvas...', canvas.width / 2 - 120, canvas.height / 2);
       }
 
       animId = requestAnimationFrame(render);
@@ -97,7 +129,7 @@ export default function NanoBananaStudioView() {
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [durationSecs, motionIntensity, cameraEffect]);
+  }, [durationSecs, motionIntensity, cameraEffect, isPlaying]);
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -119,6 +151,20 @@ export default function NanoBananaStudioView() {
       setIsGenerating(false);
       setNotice('🍌 Nano Banana Pro 2.5 fast motion video generated in 1.2s!');
     }, 1100);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNotice(`⏳ Uploading & preparing "${file.name}" for Nano Banana Motion Engine...`);
+      try {
+        const prepared = await uploadMediaFileService(file, '@nano-source');
+        setCurrentImageSrc(prepared.url);
+        setNotice(`✨ Loaded custom file "${file.name}" into Nano Banana motion canvas!`);
+      } catch (err) {
+        setNotice(`Failed to upload ${file.name}`);
+      }
+    }
   };
 
   return (
@@ -177,6 +223,42 @@ export default function NanoBananaStudioView() {
               onChange={(e) => setPrompt(e.target.value)}
               className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500 leading-relaxed resize-none font-medium"
             />
+          </div>
+
+          {/* Base Scene Selector */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono text-slate-300">Base Frame Source:</label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+              >
+                <Upload className="w-3 h-3" /> Upload Local Photo/Video
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'scene1', name: 'Porch Intro', url: '/images/scene1.jpg' },
+                { id: 'scene2', name: 'RAM Pasture', url: '/images/scene2.jpg' },
+                { id: 'scene3', name: 'Studio HQ', url: '/images/scene3.jpg' }
+              ].map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setCurrentImageSrc(s.url)}
+                  className={`p-1.5 rounded-xl border text-left cursor-pointer transition-all ${
+                    currentImageSrc === s.url
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <img src={s.url} alt={s.name} className="w-full h-12 object-cover rounded-lg mb-1" />
+                  <span className="text-[10px] font-bold block truncate">{s.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Camera Motion Selection */}
@@ -299,3 +381,4 @@ export default function NanoBananaStudioView() {
     </div>
   );
 }
+
