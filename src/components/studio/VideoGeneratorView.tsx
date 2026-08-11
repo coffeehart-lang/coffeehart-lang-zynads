@@ -25,7 +25,13 @@ import {
   MoreVertical,
   Layers,
   Cpu,
-  Bot
+  Bot,
+  Music,
+  Sliders,
+  Check,
+  X,
+  Eye,
+  Film as FilmIcon
 } from 'lucide-react';
 
 import { expandPrompt } from '../../utils/promptEnhancer';
@@ -98,6 +104,25 @@ export default function VideoGeneratorView() {
   // Keyframe image attachments
   const [startFrameUrl, setStartFrameUrl] = useState<string | null>('/images/scene1.jpg');
   const [endFrameUrl, setEndFrameUrl] = useState<string | null>('/images/scene3.jpg');
+
+  // Video, Audio, and Visual Effects Attachments & Modals State
+  const [videoClips, setVideoClips] = useState<{ id: string; tag: string; name: string; url: string }[]>([
+    { id: 'v-1', tag: '@video-1', name: 'Farm Porch B-Roll.mp4', url: '' }
+  ]);
+  const [activeAudioTrack, setActiveAudioTrack] = useState<{ name: string; url: string; type: string } | null>({
+    name: 'Zyncast Organic CFO Synth',
+    url: '',
+    type: 'preset'
+  });
+  const [activeEffect, setActiveEffect] = useState<'none' | 'cinematic' | 'vhs' | 'cyberpunk' | 'noir' | 'hdr' | 'flare' | 'grain'>('cinematic');
+
+  const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
+  const [showAudioModal, setShowAudioModal] = useState<boolean>(false);
+  const [showEffectModal, setShowEffectModal] = useState<boolean>(false);
+
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Reference assets matching Krea AI screenshot (@img-1, @img-2, @img-3)
   const [assets, setAssets] = useState<AssetReference[]>([
@@ -195,6 +220,26 @@ export default function VideoGeneratorView() {
     const height = canvas.height;
 
     ctx.clearRect(0, 0, width, height);
+
+    // Apply Active Visual FX Filter
+    ctx.save();
+    if (activeEffect === 'cinematic') {
+      ctx.filter = 'contrast(1.15) saturate(1.2) brightness(1.02)';
+    } else if (activeEffect === 'vhs') {
+      ctx.filter = 'contrast(1.22) saturate(1.35) hue-rotate(-10deg)';
+    } else if (activeEffect === 'cyberpunk') {
+      ctx.filter = 'contrast(1.3) saturate(1.6) hue-rotate(180deg)';
+    } else if (activeEffect === 'noir') {
+      ctx.filter = 'grayscale(1.0) contrast(1.4) brightness(0.9)';
+    } else if (activeEffect === 'hdr') {
+      ctx.filter = 'contrast(1.35) saturate(1.5)';
+    } else if (activeEffect === 'grain') {
+      ctx.filter = 'contrast(1.1) brightness(1.02)';
+    } else if (activeEffect === 'flare') {
+      ctx.filter = 'contrast(1.12) saturate(1.2)';
+    } else {
+      ctx.filter = 'none';
+    }
 
     if (t < 2.5) {
       // SCENE 1: Porch intro (0.0s - 2.5s)
@@ -512,7 +557,31 @@ export default function VideoGeneratorView() {
       ctx.restore();
     }
 
-  }, [isPlaying, speakLine]);
+    // Overlay Effect Graphics (Scanlines, Film Noise, Anamorphic Streak)
+    if (activeEffect === 'vhs') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+      for (let y = 0; y < height; y += 4) {
+        ctx.fillRect(0, y, width, 1.5);
+      }
+      ctx.font = 'bold 15px monospace';
+      ctx.fillStyle = '#facc15';
+      ctx.fillText('PLAY 00:00:' + Math.floor(t).toString().padStart(2, '0') + ' SP', 30, height - 25);
+    } else if (activeEffect === 'grain') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      for (let g = 0; g < 120; g++) {
+        ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+      }
+    } else if (activeEffect === 'flare') {
+      const flareGrad = ctx.createLinearGradient(0, height * 0.4, width, height * 0.4);
+      flareGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+      flareGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.35)');
+      flareGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = flareGrad;
+      ctx.fillRect(0, height * 0.38, width, 14);
+    }
+
+    ctx.restore();
+  }, [isPlaying, speakLine, activeEffect]);
 
   // Main Playback Timer Loop using timeRef for smooth 60fps playback
   useEffect(() => {
@@ -552,8 +621,12 @@ export default function VideoGeneratorView() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setStartFrameUrl(ev.target?.result as string);
-        setNotice('Start frame updated!');
+        const url = ev.target?.result as string;
+        setStartFrameUrl(url);
+        const img = new Image();
+        img.src = url;
+        imgScene1Ref.current = img;
+        setNotice('✨ Uploaded custom image updated live on video canvas!');
       };
       reader.readAsDataURL(file);
     }
@@ -564,8 +637,12 @@ export default function VideoGeneratorView() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setEndFrameUrl(ev.target?.result as string);
-        setNotice('End frame updated!');
+        const url = ev.target?.result as string;
+        setEndFrameUrl(url);
+        const img = new Image();
+        img.src = url;
+        imgScene3Ref.current = img;
+        setNotice('✨ Uploaded end frame updated live on video canvas!');
       };
       reader.readAsDataURL(file);
     }
@@ -578,7 +655,22 @@ export default function VideoGeneratorView() {
       reader.onload = (ev) => {
         const result = ev.target?.result as string;
         setAssets(prev => prev.map(a => a.id === id ? { ...a, url: result, name: file.name.slice(0, 18) } : a));
-        setNotice(`Updated asset for ${id}!`);
+        
+        const img = new Image();
+        img.src = result;
+        if (id === 'img-1') {
+          imgScene1Ref.current = img;
+          setStartFrameUrl(result);
+        } else if (id === 'img-2') {
+          imgScene2Ref.current = img;
+        } else if (id === 'img-3') {
+          imgScene3Ref.current = img;
+          setEndFrameUrl(result);
+        } else {
+          imgScene1Ref.current = img;
+          setStartFrameUrl(result);
+        }
+        setNotice(`✨ Updated video canvas scene image for ${id}!`);
       };
       reader.readAsDataURL(file);
     }
@@ -589,19 +681,60 @@ export default function VideoGeneratorView() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (ev) => {
+        const url = ev.target?.result as string;
         const nextIndex = assets.length + 1;
         const tag = `@img-${nextIndex}`;
         const newAsset: AssetReference = {
           id: `img-${nextIndex}`,
           tag,
           name: file.name.slice(0, 16),
-          url: ev.target?.result as string
+          url
         };
         setAssets(prev => [...prev, newAsset]);
+        setStartFrameUrl(url);
+        
+        // Load immediately into video generator canvas
+        const img = new Image();
+        img.src = url;
+        imgScene1Ref.current = img;
+
         setPrompt(prev => prev + ` ${tag} `);
-        setNotice(`Added uploaded image as ${tag}!`);
+        setNotice(`✨ Added uploaded image as ${tag} & updated live video generator!`);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSelectAssetAsScene = (asset: AssetReference) => {
+    const img = new Image();
+    img.src = asset.url;
+    imgScene1Ref.current = img;
+    setStartFrameUrl(asset.url);
+    handleInsertTag(asset.tag);
+    setNotice(`Loaded ${asset.tag} into video generator preview!`);
+  };
+
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const nextIdx = videoClips.length + 1;
+      const tag = `@video-${nextIdx}`;
+      setVideoClips(prev => [...prev, { id: `v-${nextIdx}`, tag, name: file.name, url }]);
+      setPrompt(prev => prev + ` ${tag} `);
+      setNotice(`🎬 Attached video clip reference ${tag} (${file.name}) to video generator!`);
+      setShowVideoModal(false);
+    }
+  };
+
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setActiveAudioTrack({ name: file.name, url, type: 'custom' });
+      setPrompt(prev => prev + ` @audio-track `);
+      setNotice(`🎵 Attached custom audio track "${file.name}" to video generator!`);
+      setShowAudioModal(false);
     }
   };
 
@@ -1403,29 +1536,43 @@ export default function VideoGeneratorView() {
 
               <button
                 type="button"
-                onClick={() => handleInsertTag('@video-clip')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-purple-500 rounded-xl cursor-pointer transition-all group"
+                onClick={() => setShowVideoModal(true)}
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-purple-500 rounded-xl cursor-pointer transition-all group relative"
+                title="Add & upload video B-roll clips"
               >
                 <Video className="w-4 h-4 text-slate-400 group-hover:text-purple-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add video</span>
+                {videoClips.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {videoClips.length}
+                  </span>
+                )}
               </button>
 
               <button
                 type="button"
-                onClick={() => handleInsertTag('@voiceover')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-emerald-500 rounded-xl cursor-pointer transition-all group"
+                onClick={() => setShowAudioModal(true)}
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-emerald-500 rounded-xl cursor-pointer transition-all group relative"
+                title="Add background music & voiceover track"
               >
                 <Volume2 className="w-4 h-4 text-slate-400 group-hover:text-emerald-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add audio</span>
+                {activeAudioTrack && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                )}
               </button>
 
               <button
                 type="button"
-                onClick={() => handleInsertTag('[4K Cinematic]')}
-                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-amber-500 rounded-xl cursor-pointer transition-all group"
+                onClick={() => setShowEffectModal(true)}
+                className="flex flex-col items-center justify-center w-14 h-14 bg-[#1a1d26] hover:bg-[#222633] border border-slate-800 hover:border-amber-500 rounded-xl cursor-pointer transition-all group relative"
+                title="Apply cinematic visual effects & color grading"
               >
                 <Wand2 className="w-4 h-4 text-slate-400 group-hover:text-amber-400" />
                 <span className="text-[9px] font-semibold text-slate-400 group-hover:text-white mt-1">Add effect</span>
+                {activeEffect !== 'none' && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full" />
+                )}
               </button>
             </div>
 
@@ -1440,9 +1587,15 @@ export default function VideoGeneratorView() {
                 return (
                   <div key={asset.id} className="flex flex-col items-center gap-1 group relative shrink-0">
                     <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 relative shadow-md">
-                      <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
-                      <label className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
-                        <Upload className="w-3.5 h-3.5 text-white" />
+                      <img 
+                        src={asset.url} 
+                        alt={asset.name} 
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
+                        onClick={() => handleSelectAssetAsScene(asset)}
+                        title={`Click to load ${asset.tag} into video generator player`}
+                      />
+                      <label className="absolute top-0 right-0 p-1 bg-slate-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity rounded-bl-lg">
+                        <Upload className="w-3 h-3 text-white" />
                         <input
                           type="file"
                           accept="image/*"
@@ -1453,8 +1606,9 @@ export default function VideoGeneratorView() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleInsertTag(asset.tag)}
+                      onClick={() => handleSelectAssetAsScene(asset)}
                       className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${colorTag} cursor-pointer hover:scale-105 transition-transform`}
+                      title="Click to insert tag & preview image"
                     >
                       {asset.tag}
                     </button>
@@ -1569,6 +1723,249 @@ export default function VideoGeneratorView() {
           <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between animate-fade-in shadow-md">
             <span>{notice}</span>
             <button onClick={() => setNotice(null)} className="text-emerald-400 hover:text-white font-bold text-sm">✕</button>
+          </div>
+        )}
+
+        {/* Hidden File Inputs for Video & Audio Uploads */}
+        <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileUpload} />
+        <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioFileUpload} />
+
+        {/* MODAL 1: VIDEO B-ROLL CLIPS MODAL */}
+        {showVideoModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-[#13151c] border border-slate-800 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl relative text-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <FilmIcon className="w-5 h-5 text-purple-400" />
+                  <h3 className="font-bold text-base text-white">Video B-Roll Clip Library</h3>
+                </div>
+                <button onClick={() => setShowVideoModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Upload custom video clips or select farm pasture B-roll references to overlay into your commercial generation sequence.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  className="w-full py-3 px-4 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-700/60 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-md"
+                >
+                  <Upload className="w-4 h-4 text-purple-400" />
+                  <span>Upload Local Video File (.mp4, .mov, .webm)</span>
+                </button>
+
+                <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider pt-2">Preset Commercial Motion References</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { tag: '@video-1', name: 'Farm Porch Pan.mp4', desc: 'Main character camera motion' },
+                    { tag: '@video-2', name: 'RAM Sticks Pasture.mp4', desc: 'Cartoon RAM sticks grazing' },
+                    { tag: '@video-3', name: 'Zyncast Studio HQ.mp4', desc: 'CFO dashboard screen reveal' },
+                    { tag: '@video-4', name: 'Commercial Call To Action.mp4', desc: 'Free trial end card motion' }
+                  ].map(v => (
+                    <button
+                      key={v.tag}
+                      type="button"
+                      onClick={() => {
+                        if (!videoClips.some(c => c.tag === v.tag)) {
+                          setVideoClips(prev => [...prev, { id: v.tag, tag: v.tag, name: v.name, url: '' }]);
+                        }
+                        setPrompt(prev => prev + ` ${v.tag} `);
+                        setNotice(`Attached ${v.tag} (${v.name}) to timeline!`);
+                        setShowVideoModal(false);
+                      }}
+                      className="p-2.5 bg-[#1a1d26] hover:bg-slate-800 border border-slate-800 rounded-xl text-left cursor-pointer transition-all hover:scale-[1.02]"
+                    >
+                      <div className="text-xs font-bold font-mono text-purple-300 flex items-center justify-between">
+                        <span>{v.tag}</span>
+                        <Plus className="w-3.5 h-3.5 text-slate-400" />
+                      </div>
+                      <div className="text-[10px] text-slate-300 font-medium truncate mt-0.5">{v.name}</div>
+                      <div className="text-[9px] text-slate-400">{v.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-slate-800">
+                <button
+                  onClick={() => setShowVideoModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 2: AUDIO & VOICEOVER NARRATION STUDIO */}
+        {showAudioModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-[#13151c] border border-slate-800 rounded-2xl p-6 max-w-lg w-full space-y-5 shadow-2xl relative text-slate-100">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Music className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-bold text-base text-white">Audio & Voiceover Narration Studio</h3>
+                </div>
+                <button onClick={() => setShowAudioModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Select or upload custom audio tracks to play along with your commercial video generation.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => audioInputRef.current?.click()}
+                  className="w-full py-3 px-4 bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-700/60 rounded-xl text-xs font-bold text-emerald-200 flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-md"
+                >
+                  <Upload className="w-4 h-4 text-emerald-400" />
+                  <span>Upload Custom Audio File (.mp3, .wav, .aac)</span>
+                </button>
+
+                <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider pt-2">Preset Soundtrack Loops</div>
+                <div className="space-y-2">
+                  {[
+                    { name: 'Zyncast Organic CFO Synth', genre: 'Upbeat Tech Commercial', tag: '@synth-track' },
+                    { name: 'Corporate CFO Growth Anthem', genre: 'Inspirational Orchestral', tag: '@anthem' },
+                    { name: 'AI Voiceover Speech Narration', genre: 'Clear Speech Synthesis', tag: '@voiceover' },
+                    { name: 'Organic Pastoral Acoustic', genre: 'Calm Guitar Flow', tag: '@acoustic' }
+                  ].map(track => (
+                    <button
+                      key={track.name}
+                      type="button"
+                      onClick={() => {
+                        setActiveAudioTrack({ name: track.name, url: '', type: 'preset' });
+                        setPrompt(prev => prev + ` ${track.tag} `);
+                        setNotice(`Attached "${track.name}" soundtrack!`);
+                        setShowAudioModal(false);
+                      }}
+                      className={`w-full p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all text-left ${
+                        activeAudioTrack?.name === track.name
+                          ? 'bg-emerald-950/80 border-emerald-600/80 text-emerald-200'
+                          : 'bg-[#1a1d26] hover:bg-slate-800 border-slate-800 text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <div>
+                          <div className="text-xs font-bold">{track.name}</div>
+                          <div className="text-[10px] text-slate-400">{track.genre}</div>
+                        </div>
+                      </div>
+                      {activeAudioTrack?.name === track.name && (
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                {activeAudioTrack ? (
+                  <button
+                    onClick={() => {
+                      setActiveAudioTrack(null);
+                      setNotice('Detached audio track');
+                    }}
+                    className="text-xs text-rose-400 hover:text-rose-300 font-medium cursor-pointer"
+                  >
+                    Detach Audio Track
+                  </button>
+                ) : <div />}
+                <button
+                  onClick={() => setShowAudioModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 3: VISUAL EFFECTS STUDIO MODAL */}
+        {showEffectModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-[#13151c] border border-slate-800 rounded-2xl p-6 max-w-xl w-full space-y-5 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-bold text-base text-white">Visual FX & Color Grading Studio</h3>
+                </div>
+                <button onClick={() => setShowEffectModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Click a preset effect below to apply dynamic color grading, analog scanlines, or cinema flares live onto the video generator player.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  { id: 'cinematic', name: 'Cinematic 4K', tag: '[4K Cinematic]', desc: 'Rich anamorphic contrast & warm LUT' },
+                  { id: 'vhs', name: 'VHS Vintage 90s', tag: '[VHS Retro]', desc: 'Scanlines, analog shift & timestamp' },
+                  { id: 'cyberpunk', name: 'Cyberpunk Neon', tag: '[Cyberpunk Bloom]', desc: 'Vivid cyan/purple duotone' },
+                  { id: 'noir', name: 'Film Noir', tag: '[Film Noir B&W]', desc: 'Monochrome dramatic shadows' },
+                  { id: 'hdr', name: 'HDR Vivid', tag: '[HDR Boost]', desc: 'Enhanced saturation & punchy contrast' },
+                  { id: 'flare', name: 'Lens Flare', tag: '[Anamorphic Streak]', desc: 'Horizontal optical light streak' },
+                  { id: 'grain', name: '35mm Grain', tag: '[Film Grain]', desc: 'Organic moving film texture' },
+                  { id: 'none', name: 'Clean Original', tag: '[Clean Feed]', desc: 'No active visual filter' }
+                ].map(fx => {
+                  const isSelected = activeEffect === fx.id;
+                  return (
+                    <button
+                      key={fx.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveEffect(fx.id as any);
+                        if (fx.id !== 'none') {
+                          setPrompt(prev => prev + ` ${fx.tag} `);
+                          setNotice(`✨ Applied ${fx.name} visual effect to video generator player!`);
+                        } else {
+                          setNotice('Reset video generator to clean original feed.');
+                        }
+                        setShowEffectModal(false);
+                      }}
+                      className={`p-3 rounded-xl border text-left cursor-pointer transition-all hover:scale-105 flex flex-col justify-between ${
+                        isSelected 
+                          ? 'bg-amber-950/80 border-amber-500 text-amber-200 shadow-lg shadow-amber-950/50' 
+                          : 'bg-[#1a1d26] hover:bg-slate-800 border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <span>{fx.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                        </div>
+                        <div className="text-[10px] text-amber-400/90 font-mono mt-1">{fx.tag}</div>
+                      </div>
+                      <div className="text-[9px] text-slate-400 mt-2">{fx.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                <span className="text-[11px] font-mono text-slate-400">
+                  Active Effect: <strong className="text-amber-300 uppercase">{activeEffect}</strong>
+                </span>
+                <button
+                  onClick={() => setShowEffectModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         )}
           </>
