@@ -165,6 +165,25 @@ export default function VideoGeneratorView() {
   const startFrameInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
 
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const videoMediaRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync active video element
+  useEffect(() => {
+    if (activeVideoUrl) {
+      const vid = document.createElement('video');
+      vid.src = activeVideoUrl;
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = isMuted;
+      vid.playsInline = true;
+      vid.play().catch(() => {});
+      videoMediaRef.current = vid;
+    } else {
+      videoMediaRef.current = null;
+    }
+  }, [activeVideoUrl, isMuted]);
+
   // Preloaded Images for smooth Canvas Rendering
   const imgScene1Ref = useRef<HTMLImageElement | null>(null);
   const imgScene2Ref = useRef<HTMLImageElement | null>(null);
@@ -240,6 +259,13 @@ export default function VideoGeneratorView() {
       ctx.filter = 'contrast(1.12) saturate(1.2)';
     } else {
       ctx.filter = 'none';
+    }
+
+    if (activeVideoUrl && videoMediaRef.current && videoMediaRef.current.readyState >= 2) {
+      const vid = videoMediaRef.current;
+      ctx.drawImage(vid, 0, 0, width, height);
+      ctx.restore();
+      return;
     }
 
     if (t < 2.5) {
@@ -731,8 +757,9 @@ export default function VideoGeneratorView() {
       try {
         const prepared = await uploadMediaFileService(file, tag);
         setVideoClips(prev => [...prev, { id: `v-${nextIdx}`, tag, name: file.name, url: prepared.url }]);
+        setActiveVideoUrl(prepared.url);
         setPrompt(prev => prev + ` ${tag} `);
-        setNotice(`🎬 Uploaded & prepared video clip ${tag} (${file.name}) for video generator!`);
+        setNotice(`🎬 Uploaded & loaded video clip ${tag} (${file.name}) into video player!`);
       } catch (err) {
         setNotice(`Error processing video file ${file.name}`);
       }
@@ -1381,6 +1408,26 @@ export default function VideoGeneratorView() {
               height={720}
               className="w-full h-full object-cover rounded-xl"
             />
+
+            <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
+              {activeVideoUrl ? (
+                <div className="flex items-center gap-2 bg-slate-950/90 backdrop-blur-md border border-indigo-500/80 px-2.5 py-1 rounded-lg text-[10px] font-mono text-indigo-300 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Custom Video Playing</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideoUrl(null)}
+                    className="ml-1 px-1.5 py-0.5 bg-indigo-900/80 hover:bg-indigo-800 text-white rounded cursor-pointer"
+                  >
+                    Switch to Commercial
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 px-2.5 py-1 rounded-lg text-[10px] font-mono text-amber-300 shadow-md">
+                  Synthesized Commercial Mode
+                </div>
+              )}
+            </div>
 
             <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-90 hover:opacity-100 transition-opacity">
               <button

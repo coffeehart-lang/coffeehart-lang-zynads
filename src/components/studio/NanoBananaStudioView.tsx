@@ -35,20 +35,49 @@ export default function NanoBananaStudioView() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [loopTime, setLoopTime] = useState<number>(0);
 
-  const [currentImageSrc, setCurrentImageSrc] = useState<string>('/images/scene2.jpg');
+  const [currentMediaSrc, setCurrentMediaSrc] = useState<string>('/images/scene2.jpg');
+  const [isVideoMedia, setIsVideoMedia] = useState<boolean>(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Preload active scene image
+  // Preload active scene image or video
   useEffect(() => {
-    const img = new Image();
-    img.src = currentImageSrc;
-    img.onload = () => {
+    const isVid = currentMediaSrc.startsWith('data:video') || currentMediaSrc.endsWith('.mp4') || currentMediaSrc.endsWith('.webm') || currentMediaSrc.endsWith('.mov');
+    setIsVideoMedia(isVid);
+
+    if (isVid) {
+      const vid = document.createElement('video');
+      vid.src = currentMediaSrc;
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = isMuted;
+      vid.playsInline = true;
+      vid.play().catch(() => {});
+      videoRef.current = vid;
+      imgRef.current = null;
+    } else {
+      const img = new Image();
+      img.src = currentMediaSrc;
+      img.onload = () => {
+        imgRef.current = img;
+      };
       imgRef.current = img;
-    };
-    imgRef.current = img;
-  }, [currentImageSrc]);
+      videoRef.current = null;
+    }
+  }, [currentMediaSrc, isMuted]);
+
+  // Sync video play/pause with isPlaying state
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
 
   // Animation Loop for Nano Banana motion preview
   useEffect(() => {
@@ -81,7 +110,13 @@ export default function NanoBananaStudioView() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const img = imgRef.current;
-      if (img && img.complete && img.naturalWidth > 0) {
+      const vid = videoRef.current;
+
+      const isElementReady = isVideoMedia 
+        ? (vid && vid.readyState >= 2) 
+        : (img && img.complete && img.naturalWidth > 0);
+
+      if (isElementReady) {
         ctx.save();
         
         // Motion calculation based on cameraEffect
@@ -104,7 +139,12 @@ export default function NanoBananaStudioView() {
 
         ctx.translate(canvas.width / 2 + dx, canvas.height / 2 + dy);
         ctx.scale(scale, scale);
-        ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+        
+        if (isVideoMedia && vid) {
+          ctx.drawImage(vid, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+        } else if (img) {
+          ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+        }
         ctx.restore();
 
         // Draw particle overlay for Nano Banana Tech effect
@@ -159,7 +199,7 @@ export default function NanoBananaStudioView() {
       setNotice(`⏳ Uploading & preparing "${file.name}" for Nano Banana Motion Engine...`);
       try {
         const prepared = await uploadMediaFileService(file, '@nano-source');
-        setCurrentImageSrc(prepared.url);
+        setCurrentMediaSrc(prepared.url);
         setNotice(`✨ Loaded custom file "${file.name}" into Nano Banana motion canvas!`);
       } catch (err) {
         setNotice(`Failed to upload ${file.name}`);
@@ -247,9 +287,9 @@ export default function NanoBananaStudioView() {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setCurrentImageSrc(s.url)}
+                  onClick={() => setCurrentMediaSrc(s.url)}
                   className={`p-1.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    currentImageSrc === s.url
+                    currentMediaSrc === s.url
                       ? 'bg-amber-500/20 border-amber-500 text-amber-300'
                       : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                   }`}
