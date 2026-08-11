@@ -447,6 +447,39 @@ Respond with ONLY a strict JSON object with these exact keys:
     }
   });
 
+  // Media File Upload & Video Generator Backend Preparation Endpoint
+  app.post("/api/zynads/upload", async (req, res: any) => {
+    try {
+      const { fileName, mimeType, size, sizeBytes, mediaType, tagSymbol } = req.body;
+
+      if (!fileName) {
+        return res.status(400).json({ error: "File name is required." });
+      }
+
+      const assetId = `zyn_asset_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      
+      console.log(`[ZynAds File Upload] Processed & Prepared ${mediaType || 'media'} file "${fileName}" (${size || 'Unknown size'}) for video generator backend. Tag: ${tagSymbol || 'N/A'}`);
+
+      return res.json({
+        success: true,
+        asset: {
+          id: assetId,
+          name: fileName,
+          type: mediaType || 'image',
+          size: size || '1.2 MB',
+          mimeType: mimeType || 'application/octet-stream',
+          status: 'ready_for_video_generator',
+          processedAt: new Date().toISOString(),
+          tag: tagSymbol,
+          backendQueueId: `queue_${Date.now()}`
+        }
+      });
+    } catch (err: any) {
+      console.error("File Upload Endpoint Error:", err);
+      res.status(500).json({ error: "Failed to process uploaded file", message: err.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

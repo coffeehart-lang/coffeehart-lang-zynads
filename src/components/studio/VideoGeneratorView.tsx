@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 
 import { expandPrompt } from '../../utils/promptEnhancer';
+import { uploadMediaFileService } from '../../services/uploadService';
 import ImageStudioView from './ImageStudioView';
 import EnhancerView from './EnhancerView';
 import NanoBananaStudioView from './NanoBananaStudioView';
@@ -616,92 +617,97 @@ export default function VideoGeneratorView() {
     setPrompt(prev => prev + ` ${tag} `);
   };
 
-  const handleStartFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStartFrameUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string;
-        setStartFrameUrl(url);
+      setNotice(`⏳ Uploading & preparing "${file.name}" for Video Generator Backend...`);
+      try {
+        const prepared = await uploadMediaFileService(file, '@start-frame');
+        setStartFrameUrl(prepared.url);
         const img = new Image();
-        img.src = url;
+        img.src = prepared.url;
         imgScene1Ref.current = img;
-        setNotice('✨ Uploaded custom image updated live on video canvas!');
-      };
-      reader.readAsDataURL(file);
+        setNotice(`✨ Prepared & loaded "${file.name}" into video generator canvas!`);
+      } catch (err) {
+        setNotice(`Error preparing ${file.name}`);
+      }
     }
   };
 
-  const handleEndFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEndFrameUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string;
-        setEndFrameUrl(url);
+      setNotice(`⏳ Uploading & preparing "${file.name}" for Video Generator Backend...`);
+      try {
+        const prepared = await uploadMediaFileService(file, '@end-frame');
+        setEndFrameUrl(prepared.url);
         const img = new Image();
-        img.src = url;
+        img.src = prepared.url;
         imgScene3Ref.current = img;
-        setNotice('✨ Uploaded end frame updated live on video canvas!');
-      };
-      reader.readAsDataURL(file);
+        setNotice(`✨ Prepared & loaded end frame "${file.name}" into video generator canvas!`);
+      } catch (err) {
+        setNotice(`Error preparing ${file.name}`);
+      }
     }
   };
 
-  const handleSwapAssetPhoto = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSwapAssetPhoto = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
-        setAssets(prev => prev.map(a => a.id === id ? { ...a, url: result, name: file.name.slice(0, 18) } : a));
+      setNotice(`⏳ Uploading & preparing "${file.name}" for Video Generator Backend...`);
+      try {
+        const prepared = await uploadMediaFileService(file, `@${id}`);
+        setAssets(prev => prev.map(a => a.id === id ? { ...a, url: prepared.url, name: file.name.slice(0, 18) } : a));
         
         const img = new Image();
-        img.src = result;
+        img.src = prepared.url;
         if (id === 'img-1') {
           imgScene1Ref.current = img;
-          setStartFrameUrl(result);
+          setStartFrameUrl(prepared.url);
         } else if (id === 'img-2') {
           imgScene2Ref.current = img;
         } else if (id === 'img-3') {
           imgScene3Ref.current = img;
-          setEndFrameUrl(result);
+          setEndFrameUrl(prepared.url);
         } else {
           imgScene1Ref.current = img;
-          setStartFrameUrl(result);
+          setStartFrameUrl(prepared.url);
         }
-        setNotice(`✨ Updated video canvas scene image for ${id}!`);
-      };
-      reader.readAsDataURL(file);
+        setNotice(`✨ Prepared & updated video canvas scene image for ${id}!`);
+      } catch (err) {
+        setNotice(`Error preparing asset for ${id}`);
+      }
     }
   };
 
-  const handleAddNewImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddNewImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string;
-        const nextIndex = assets.length + 1;
-        const tag = `@img-${nextIndex}`;
+      const nextIndex = assets.length + 1;
+      const tag = `@img-${nextIndex}`;
+      setNotice(`⏳ Uploading & preparing "${file.name}" (${tag}) for Video Generator Backend...`);
+      
+      try {
+        const prepared = await uploadMediaFileService(file, tag);
         const newAsset: AssetReference = {
           id: `img-${nextIndex}`,
           tag,
           name: file.name.slice(0, 16),
-          url
+          url: prepared.url
         };
         setAssets(prev => [...prev, newAsset]);
-        setStartFrameUrl(url);
+        setStartFrameUrl(prepared.url);
         
         // Load immediately into video generator canvas
         const img = new Image();
-        img.src = url;
+        img.src = prepared.url;
         imgScene1Ref.current = img;
 
         setPrompt(prev => prev + ` ${tag} `);
-        setNotice(`✨ Added uploaded image as ${tag} & updated live video generator!`);
-      };
-      reader.readAsDataURL(file);
+        setNotice(`✨ Prepared & added uploaded image as ${tag} for video generator backend!`);
+      } catch (err) {
+        setNotice(`Error uploading ${file.name}`);
+      }
     }
   };
 
@@ -714,27 +720,39 @@ export default function VideoGeneratorView() {
     setNotice(`Loaded ${asset.tag} into video generator preview!`);
   };
 
-  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
       const nextIdx = videoClips.length + 1;
       const tag = `@video-${nextIdx}`;
-      setVideoClips(prev => [...prev, { id: `v-${nextIdx}`, tag, name: file.name, url }]);
-      setPrompt(prev => prev + ` ${tag} `);
-      setNotice(`🎬 Attached video clip reference ${tag} (${file.name}) to video generator!`);
+      setNotice(`⏳ Uploading & processing video clip "${file.name}" for Video Generator Backend...`);
       setShowVideoModal(false);
+
+      try {
+        const prepared = await uploadMediaFileService(file, tag);
+        setVideoClips(prev => [...prev, { id: `v-${nextIdx}`, tag, name: file.name, url: prepared.url }]);
+        setPrompt(prev => prev + ` ${tag} `);
+        setNotice(`🎬 Uploaded & prepared video clip ${tag} (${file.name}) for video generator!`);
+      } catch (err) {
+        setNotice(`Error processing video file ${file.name}`);
+      }
     }
   };
 
-  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setActiveAudioTrack({ name: file.name, url, type: 'custom' });
-      setPrompt(prev => prev + ` @audio-track `);
-      setNotice(`🎵 Attached custom audio track "${file.name}" to video generator!`);
+      setNotice(`⏳ Uploading & preparing audio track "${file.name}" for Video Generator Backend...`);
       setShowAudioModal(false);
+
+      try {
+        const prepared = await uploadMediaFileService(file, '@audio-track');
+        setActiveAudioTrack({ name: file.name, url: prepared.url, type: 'custom' });
+        setPrompt(prev => prev + ` @audio-track `);
+        setNotice(`🎵 Uploaded & prepared custom audio track "${file.name}" for video generator!`);
+      } catch (err) {
+        setNotice(`Error preparing audio file ${file.name}`);
+      }
     }
   };
 

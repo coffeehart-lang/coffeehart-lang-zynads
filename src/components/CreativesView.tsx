@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AdCreativeAsset } from '../types';
 import { INITIAL_CREATIVES } from '../data';
+import { uploadMediaFileService } from '../services/uploadService';
 import { 
   Plus, Copy, Check, Sparkles, Video, ExternalLink, MousePointer, Target,
   Wand2, Sliders, Volume2, Film, Zap, Layers, Activity, Music, Eye, Radio, Sun, CheckCircle2,
@@ -228,40 +229,53 @@ export default function CreativesView() {
 
   const [assetNotice, setAssetNotice] = useState<string | null>(null);
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
+    setAssetNotice(`⏳ Uploading & preparing ${files.length} file(s) for Video Generator Backend...`);
+
+    const fileList = Array.from(files);
     const newUploadedAssets: UserAsset[] = [];
-    Array.from(files).forEach((file, idx) => {
-      const fileType = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : 'image';
-      const fileUrl = URL.createObjectURL(file);
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+
+    for (let idx = 0; idx < fileList.length; idx++) {
+      const file = fileList[idx];
       const count = userAssets.length + newUploadedAssets.length + 1;
+      const tagSymbol = `@img-${count}`;
 
-      newUploadedAssets.push({
-        id: `user-upload-${Date.now()}-${idx}`,
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        type: fileType,
-        url: fileUrl,
-        size: sizeMB,
-        duration: fileType === 'video' ? '0:15' : undefined,
-        aspectRatio: '16:9',
-        uploadedAt: 'Just now',
-        tags: ['custom-upload', fileType],
-        isProjectActive: idx === 0, // Make the newly uploaded file active!
-        tagSymbol: `@img-${count}`
-      });
-    });
+      try {
+        const prepared = await uploadMediaFileService(file, tagSymbol);
+        newUploadedAssets.push({
+          id: prepared.id,
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          type: prepared.type,
+          url: prepared.url,
+          size: prepared.size,
+          duration: prepared.type === 'video' ? '0:15' : undefined,
+          aspectRatio: '16:9',
+          uploadedAt: 'Just now',
+          tags: ['custom-upload', prepared.type, 'prepared'],
+          isProjectActive: idx === 0,
+          tagSymbol
+        });
+      } catch (err) {
+        console.error('Error processing asset:', err);
+      }
+    }
 
-    setUserAssets(prev => [
-      ...newUploadedAssets,
-      ...prev.map(a => ({
-        ...a,
-        isProjectActive: newUploadedAssets.length > 0 ? false : a.isProjectActive
-      }))
-    ]);
-    setAssetNotice(`✨ Uploaded ${newUploadedAssets.length} video/media asset(s)! Active media updated.`);
-    setTimeout(() => setAssetNotice(null), 4000);
+    if (newUploadedAssets.length > 0) {
+      setUserAssets(prev => [
+        ...newUploadedAssets,
+        ...prev.map(a => ({
+          ...a,
+          isProjectActive: newUploadedAssets.length > 0 ? false : a.isProjectActive
+        }))
+      ]);
+      setAssetNotice(`✨ Uploaded & prepared ${newUploadedAssets.length} media file(s) for Video Generator Backend!`);
+    } else {
+      setAssetNotice(`Failed to upload media files.`);
+    }
+
+    setTimeout(() => setAssetNotice(null), 5000);
   };
 
   const handleSetActiveProjectAsset = (id: string) => {
