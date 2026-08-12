@@ -196,13 +196,15 @@ export default function VideoGeneratorView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, voice: 'Zephyr' })
       });
-      const data = await res.json();
-      if (data.success && data.audioBase64) {
-        await processAndPlayAudioBase64(data.audioBase64, data.mimeType || 'audio/mp3');
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.audioBase64) {
+          const playedNode = await processAndPlayAudioBase64(data.audioBase64, data.mimeType || 'audio/mp3');
+          if (playedNode) return;
+        }
       }
     } catch (e) {
-      console.warn("Gemini TTS fallback to browser speech:", e);
+      // Fallback seamlessly to Web Speech Synthesis
     }
 
     // Natural Web Speech synthesis fallback

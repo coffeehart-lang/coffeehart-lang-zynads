@@ -1,4 +1,4 @@
-import { LayoutDashboard, Megaphone, Palette, Users, Sparkles, BarChart3, Eye, EyeOff, Zap, X, LogIn, Video, Calculator } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Palette, Users, Sparkles, BarChart3, Eye, EyeOff, Zap, X, LogIn, Video, Calculator, FileSpreadsheet } from 'lucide-react';
 import { UserProfile } from './AuthModal';
 
 interface SidebarProps {
@@ -31,6 +31,7 @@ export default function Sidebar({
     { id: 'audiences', label: 'Target Audiences', icon: Users },
     { id: 'teleprompter', label: 'Commercial & AI Video Studio', icon: Video },
     { id: 'budget-calculator', label: 'ZyncastCFO Financials', icon: Calculator },
+    { id: 'payroll', label: 'Payroll & QuickBooks Sync', icon: FileSpreadsheet },
     { id: 'ai-optimizer', label: 'AI Ad Strategy', icon: Sparkles },
     { id: 'analytics', label: 'Reports & Site Traffic', icon: BarChart3 },
   ];

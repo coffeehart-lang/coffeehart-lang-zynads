@@ -242,19 +242,36 @@ export async function processAndPlayAudioBase64(
   mimeType: string = 'audio/mp3',
   onEnded?: () => void
 ): Promise<AudioBufferSourceNode | null> {
+  if (!base64Audio || typeof base64Audio !== 'string') {
+    return null;
+  }
+
+  const cleanBase64 = base64Audio.replace(/^data:audio\/[a-z0-9]+;base64,/, '').trim();
+  if (cleanBase64.length < 32) {
+    return null;
+  }
+
   const audioCtx = getSharedAudioContext();
 
   try {
-    // 1. Convert base64 to ArrayBuffer
-    const binaryString = atob(base64Audio);
+    // 1. Convert base64 to Uint8Array safely
+    const binaryString = atob(cleanBase64);
     const len = binaryString.length;
+    if (len < 32) return null;
+
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // 2. Decode raw audio data
-    let decodedBuffer = await audioCtx.decodeAudioData(bytes.buffer);
+    // 2. Decode raw audio data safely
+    let decodedBuffer: AudioBuffer;
+    try {
+      decodedBuffer = await audioCtx.decodeAudioData(bytes.buffer.slice(0));
+    } catch (decodeErr) {
+      // Return null so caller seamlessly triggers SpeechSynthesis fallback
+      return null;
+    }
 
     // 3. Peak Normalization
     decodedBuffer = normalizeAudioBuffer(decodedBuffer, 0.95);
@@ -323,16 +340,6 @@ export async function processAndPlayAudioBase64(
     source.start(0);
     return source;
   } catch (err) {
-    console.error('Audio processing/playback error:', err);
-    
-    // Fallback: HTML Audio playback
-    try {
-      const audio = new Audio(`data:${mimeType};base64,${base64Audio}`);
-      if (onEnded) audio.onended = onEnded;
-      await audio.play();
-    } catch (fallbackErr) {
-      console.error('Fallback audio play error:', fallbackErr);
-    }
     return null;
   }
 }

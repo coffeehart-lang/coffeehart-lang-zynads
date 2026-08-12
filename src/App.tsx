@@ -20,6 +20,7 @@ import AIOptimizerView from './components/AIOptimizerView';
 import AnalyticsView from './components/AnalyticsView';
 import TeleprompterView from './components/TeleprompterView';
 import BudgetCalculatorView from './components/BudgetCalculatorView';
+import PayrollView from './components/PayrollView';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal, { UserProfile } from './components/AuthModal';
 
@@ -205,6 +206,10 @@ export default function App() {
 
           {activeTab === 'budget-calculator' && (
             <BudgetCalculatorView />
+          )}
+
+          {activeTab === 'payroll' && (
+            <PayrollView />
           )}
 
           {activeTab === 'ai-optimizer' && (
