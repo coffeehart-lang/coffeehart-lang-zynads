@@ -108,15 +108,9 @@ export default function VideoGeneratorView() {
   const [endFrameUrl, setEndFrameUrl] = useState<string | null>('/images/scene3.jpg');
 
   // Video, Audio, and Visual Effects Attachments & Modals State
-  const [videoClips, setVideoClips] = useState<{ id: string; tag: string; name: string; url: string }[]>([
-    { id: 'v-1', tag: '@video-1', name: 'Farm Porch B-Roll.mp4', url: '' }
-  ]);
-  const [activeAudioTrack, setActiveAudioTrack] = useState<{ name: string; url: string; type: string } | null>({
-    name: 'Zyncast Organic CFO Synth',
-    url: '',
-    type: 'preset'
-  });
-  const [activeEffect, setActiveEffect] = useState<'none' | 'cinematic' | 'vhs' | 'cyberpunk' | 'noir' | 'hdr' | 'flare' | 'grain'>('cinematic');
+  const [videoClips, setVideoClips] = useState<{ id: string; tag: string; name: string; url: string }[]>([]);
+  const [activeAudioTrack, setActiveAudioTrack] = useState<{ name: string; url: string; type: string } | null>(null);
+  const [activeEffect, setActiveEffect] = useState<'none' | 'cinematic' | 'vhs' | 'cyberpunk' | 'noir' | 'hdr' | 'flare' | 'grain'>('none');
 
   const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
   const [showAudioModal, setShowAudioModal] = useState<boolean>(false);
@@ -126,27 +120,14 @@ export default function VideoGeneratorView() {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Reference assets matching Krea AI screenshot (@img-1, @img-2, @img-3)
-  const [assets, setAssets] = useState<AssetReference[]>([
-    {
-      id: 'img-1',
-      tag: '@img-1',
-      name: 'Main Character Porch',
-      url: '/images/scene1.jpg'
-    },
-    {
-      id: 'img-2',
-      tag: '@img-2',
-      name: 'Pasture & RAM Sticks',
-      url: '/images/scene2.jpg'
-    },
-    {
-      id: 'img-3',
-      tag: '@img-3',
-      name: 'Zyncast Studio',
-      url: '/images/scene3.jpg'
-    }
-  ]);
+  // User reference assets (@img-1, @img-2, etc.)
+  const [assets, setAssets] = useState<AssetReference[]>([]);
+
+  const handleDeleteAsset = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAssets(prev => prev.filter(a => a.id !== id));
+    setNotice("Image reference removed.");
+  };
 
   const [prompt, setPrompt] = useState<string>(
     `So, my video would open taking place on a farm and a pasture and all that, and it would open up to the main character on the porch. And then from there, he would say a script of like, "Do you know where your code comes from?"\n"And then it would say, "Here at Zyncastcfo, all our code is organic, cage-free, and straight to you." zyncastcfo is the all in 1 real business tool for all business owners checks us out for free trial .\nAnd then in that whole scene while he's walking down the pasture rows, there would be animals that would be a parody type thing off of computer names, like RAM, like RAM sticks. So, they'd be like little cartoonish RAM sticks and stuff like that, . So that's the person who should be in the`
@@ -1661,44 +1642,51 @@ export default function VideoGeneratorView() {
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto py-1 max-w-full">
-              {assets.map((asset, index) => {
-                const colorTag = [
-                  'text-amber-400 bg-amber-950/80 border-amber-600/50',
-                  'text-emerald-400 bg-emerald-950/80 border-emerald-600/50',
-                  'text-indigo-400 bg-indigo-950/80 border-indigo-600/50',
-                ][index % 3];
+              {assets.length === 0 ? (
+                <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1d26] hover:bg-[#222633] border border-dashed border-indigo-700/60 hover:border-indigo-400 rounded-xl cursor-pointer transition-all text-xs text-indigo-300 font-medium">
+                  <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Upload Image Reference (@img-1)</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAddNewImage} />
+                </label>
+              ) : (
+                assets.map((asset, index) => {
+                  const colorTag = [
+                    'text-amber-400 bg-amber-950/80 border-amber-600/50',
+                    'text-emerald-400 bg-emerald-950/80 border-emerald-600/50',
+                    'text-indigo-400 bg-indigo-950/80 border-indigo-600/50',
+                  ][index % 3];
 
-                return (
-                  <div key={asset.id} className="flex flex-col items-center gap-1 group relative shrink-0">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 relative shadow-md">
-                      <img 
-                        src={asset.url} 
-                        alt={asset.name} 
-                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
-                        onClick={() => handleSelectAssetAsScene(asset)}
-                        title={`Click to load ${asset.tag} into video generator player`}
-                      />
-                      <label className="absolute top-0 right-0 p-1 bg-slate-950/80 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity rounded-bl-lg">
-                        <Upload className="w-3 h-3 text-white" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleSwapAssetPhoto(asset.id, e)}
+                  return (
+                    <div key={asset.id} className="flex flex-col items-center gap-1 group relative shrink-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 relative shadow-md">
+                        <img 
+                          src={asset.url} 
+                          alt={asset.name} 
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform" 
+                          onClick={() => handleSelectAssetAsScene(asset)}
+                          title={`Click to load ${asset.tag} into video generator player`}
                         />
-                      </label>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteAsset(asset.id, e)}
+                          className="absolute top-0 right-0 p-1 bg-rose-950/90 text-rose-300 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-bl-lg font-bold text-[9px]"
+                          title="Remove image asset"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectAssetAsScene(asset)}
+                        className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${colorTag} cursor-pointer hover:scale-105 transition-transform`}
+                        title="Click to insert tag & preview image"
+                      >
+                        {asset.tag}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectAssetAsScene(asset)}
-                      className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${colorTag} cursor-pointer hover:scale-105 transition-transform`}
-                      title="Click to insert tag & preview image"
-                    >
-                      {asset.tag}
-                    </button>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 

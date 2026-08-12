@@ -20,36 +20,7 @@ interface AssetEntry {
 }
 
 export default function AssetManagerView() {
-  const [assets, setAssets] = useState<AssetEntry[]>([
-    {
-      id: 'img-1',
-      tag: '@img-1',
-      name: 'Founder on Porch',
-      category: 'Main Presenter Character',
-      url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'img-2',
-      tag: '@img-2',
-      name: 'Founder Studio Portrait',
-      category: 'Presenter Close-up',
-      url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'img-3',
-      tag: '@img-3',
-      name: 'RAM Sticks Pasture Sheep',
-      category: 'Commercial Parody Object',
-      url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'img-4',
-      tag: '@img-4',
-      name: 'Farmhouse Set Location',
-      category: 'Background Environment',
-      url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80'
-    }
-  ]);
+  const [assets, setAssets] = useState<AssetEntry[]>([]);
 
   const [isTrainingLora, setIsTrainingLora] = useState<boolean>(false);
   const [trainingProgress, setTrainingProgress] = useState<number>(0);
@@ -107,6 +78,11 @@ export default function AssetManagerView() {
     }
   };
 
+  const handleDeleteAsset = (id: string) => {
+    setAssets(prev => prev.filter(a => a.id !== id));
+    setNotice("Asset removed.");
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -155,38 +131,65 @@ export default function AssetManagerView() {
       </div>
 
       {/* Assets Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {assets.map((asset) => (
-          <div
-            key={asset.id}
-            className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 space-y-3 shadow-xl hover:border-amber-500/60 transition-all group"
-          >
-            <div className="aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative">
-              <img src={asset.url} alt={asset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              <div className="absolute top-2 left-2 bg-amber-950/90 text-amber-300 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-amber-700/50">
-                {asset.tag}
+      {assets.length === 0 ? (
+        <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-2xl p-10 text-center space-y-4 hover:border-amber-500/50 transition-colors">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-800 flex items-center justify-center text-amber-400">
+            <Upload className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-white">No Assets Uploaded Yet</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Upload your own photos or character reference images to tag them (@img-1, @img-2) and train custom LoRA models.
+            </p>
+          </div>
+          <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer transition-all">
+            <Upload className="w-4 h-4 text-slate-950" />
+            <span>Upload Your First Photo</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleUploadNewAsset} />
+          </label>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {assets.map((asset) => (
+            <div
+              key={asset.id}
+              className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 space-y-3 shadow-xl hover:border-amber-500/60 transition-all group relative"
+            >
+              <div className="aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative">
+                <img src={asset.url} alt={asset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <div className="absolute top-2 left-2 bg-amber-950/90 text-amber-300 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-amber-700/50">
+                  {asset.tag}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAsset(asset.id)}
+                  className="absolute top-2 right-2 p-1.5 bg-slate-950/80 hover:bg-rose-900 text-slate-300 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                  title="Delete asset"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-white truncate">{asset.name}</div>
+                <div className="text-[10px] font-mono text-slate-400">{asset.category}</div>
+              </div>
+
+              {/* Swap Photo Button */}
+              <label className="w-full py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/80 rounded-xl text-[10px] font-bold text-amber-300 flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <span>Swap Photo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSwapAssetPhoto(asset.id, e)} />
+              </label>
+
+              <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono text-emerald-400 font-bold">
+                <span>● LoRA WEIGHT SYNCED</span>
+                <span className="text-slate-400">Ready</span>
               </div>
             </div>
-
-            <div className="space-y-1">
-              <div className="text-xs font-bold text-white truncate">{asset.name}</div>
-              <div className="text-[10px] font-mono text-slate-400">{asset.category}</div>
-            </div>
-
-            {/* Swap Photo Button */}
-            <label className="w-full py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/80 rounded-xl text-[10px] font-bold text-amber-300 flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
-              <Upload className="w-3.5 h-3.5 text-amber-400" />
-              <span>Swap Photo</span>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSwapAssetPhoto(asset.id, e)} />
-            </label>
-
-            <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] font-mono text-emerald-400 font-bold">
-              <span>● LoRA WEIGHT SYNCED</span>
-              <span className="text-slate-400">Ready</span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {notice && (
         <div className="p-3.5 bg-emerald-950 border border-emerald-700/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between">

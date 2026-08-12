@@ -35,7 +35,7 @@ export default function NanoBananaStudioView() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [loopTime, setLoopTime] = useState<number>(0);
 
-  const [currentMediaSrc, setCurrentMediaSrc] = useState<string>('/images/scene2.jpg');
+  const [currentMediaSrc, setCurrentMediaSrc] = useState<string>('');
   const [isVideoMedia, setIsVideoMedia] = useState<boolean>(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -267,38 +267,12 @@ export default function NanoBananaStudioView() {
 
           {/* Base Scene Selector */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-mono text-slate-300">Base Frame Source:</label>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
-              >
-                <Upload className="w-3 h-3" /> Upload Local Photo/Video
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'scene1', name: 'Porch Intro', url: '/images/scene1.jpg' },
-                { id: 'scene2', name: 'RAM Pasture', url: '/images/scene2.jpg' },
-                { id: 'scene3', name: 'Studio HQ', url: '/images/scene3.jpg' }
-              ].map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setCurrentMediaSrc(s.url)}
-                  className={`p-1.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    currentMediaSrc === s.url
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <img src={s.url} alt={s.name} className="w-full h-12 object-cover rounded-lg mb-1" />
-                  <span className="text-[10px] font-bold block truncate">{s.name}</span>
-                </button>
-              ))}
-            </div>
+            <label className="text-xs font-mono text-slate-300">Base Frame Source:</label>
+            <label className="w-full py-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-amber-500 rounded-xl text-xs text-amber-300 font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors">
+              <Upload className="w-4 h-4 text-amber-400" />
+              <span>{currentMediaSrc ? 'Change Base Media File' : 'Upload Image or Video File'}</span>
+              <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
+            </label>
           </div>
 
           {/* Camera Motion Selection */}
@@ -384,30 +358,45 @@ export default function NanoBananaStudioView() {
             </span>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group">
-            <canvas ref={canvasRef} width={832} height={480} className="w-full h-full object-contain" />
+          <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group flex items-center justify-center">
+            {currentMediaSrc ? (
+              <>
+                <canvas ref={canvasRef} width={832} height={480} className="w-full h-full object-contain" />
 
-            <div className="absolute bottom-3 left-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="p-1.5 text-amber-400 hover:text-white cursor-pointer"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-                <span className="font-mono text-[11px] text-slate-300 font-bold truncate max-w-md">
-                  {prompt}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMuted(!isMuted)}
-                className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-            </div>
+                <div className="absolute bottom-3 left-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="p-1.5 text-amber-400 hover:text-white cursor-pointer"
+                    >
+                      {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </button>
+                    <span className="font-mono text-[11px] text-slate-300 font-bold truncate max-w-md">
+                      {prompt}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMuted(!isMuted)}
+                    className="p-1.5 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <label className="w-full h-full border-2 border-dashed border-slate-800 hover:border-amber-500/60 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer transition-colors space-y-3 text-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white">Upload Your Photo or Video</div>
+                  <div className="text-[10px] text-slate-400">Select any image or video to animate with Nano Motion controls</div>
+                </div>
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            )}
           </div>
 
           {notice && (

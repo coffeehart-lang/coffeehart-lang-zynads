@@ -36,26 +36,25 @@ export default function ImageStudioView() {
   const [notice, setNotice] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const [generatedGallery, setGeneratedGallery] = useState<Array<{ id: string; url: string; prompt: string; style: string }>>([
-    {
-      id: 'img-gen-1',
-      url: '/images/scene1.jpg',
-      prompt: 'Main character on farm porch holding code chip',
-      style: 'Commercial Cinematic'
-    },
-    {
-      id: 'img-gen-2',
-      url: '/images/scene2.jpg',
-      prompt: 'Pasture with cartoonish RAM sticks grazing organically',
-      style: 'Photorealistic Studio'
-    },
-    {
-      id: 'img-gen-3',
-      url: '/images/scene3.jpg',
-      prompt: 'Zyncast CFO studio broadcast control stage',
-      style: '3D Product & Animation'
+  const [generatedGallery, setGeneratedGallery] = useState<Array<{ id: string; url: string; prompt: string; style: string }>>([]);
+
+  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const newItem = {
+          id: `img-user-${Date.now()}`,
+          url: ev.target?.result as string,
+          prompt: `Uploaded image asset: ${file.name}`,
+          style: 'User Upload'
+        };
+        setGeneratedGallery(prev => [newItem, ...prev]);
+        setNotice(`Uploaded custom image "${file.name}" to studio gallery!`);
+      };
+      reader.readAsDataURL(file);
     }
-  ]);
+  };
 
   const handleGenerate = () => {
     if (!prompt.trim()) return;
@@ -248,44 +247,65 @@ export default function ImageStudioView() {
             <span className="text-xs font-bold font-mono text-cyan-300 flex items-center gap-2 uppercase">
               <ImageIcon className="w-4 h-4 text-cyan-400" /> Generated Keyframes & Assets ({generatedGallery.length})
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              Double click to send keyframe to Video Generator
-            </span>
+            <label className="text-[10px] font-mono text-cyan-400 bg-cyan-950/80 hover:bg-cyan-900 px-2.5 py-1 rounded-lg border border-cyan-800 flex items-center gap-1 cursor-pointer transition-colors">
+              <Upload className="w-3 h-3 text-cyan-400" />
+              <span>Upload Image</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {generatedGallery.map(item => (
-              <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-700 transition-all shadow-lg flex flex-col justify-between">
-                <div className="aspect-video relative overflow-hidden bg-slate-950">
-                  <img src={item.url} alt={item.prompt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-cyan-300 border border-slate-800">
-                    {item.style}
-                  </div>
-                </div>
-                <div className="p-3 space-y-2">
-                  <p className="text-xs text-slate-300 line-clamp-2 font-medium">{item.prompt}</p>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyPrompt(item.prompt, item.id)}
-                      className="text-[10px] font-mono text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
-                    >
-                      {copiedId === item.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedId === item.id ? 'Copied' : 'Copy Prompt'}</span>
-                    </button>
-                    <a
-                      href={item.url}
-                      download="commercial-asset.jpg"
-                      className="p-1.5 text-slate-400 hover:text-cyan-300 bg-slate-800 rounded-lg border border-slate-700 transition-colors"
-                      title="Download image"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </div>
+          {generatedGallery.length === 0 ? (
+            <div className="bg-slate-900 border-2 border-dashed border-slate-800 rounded-2xl p-10 text-center space-y-4 hover:border-cyan-500/50 transition-colors">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-800 flex items-center justify-center text-cyan-400">
+                <ImageIcon className="w-7 h-7" />
               </div>
-            ))}
-          </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-white">Studio Canvas Ready</h3>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Type a prompt above and click "Generate Image" or upload your own custom photo.
+                </p>
+              </div>
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg cursor-pointer transition-all">
+                <Upload className="w-4 h-4 text-slate-950" />
+                <span>Upload Custom Image</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
+              </label>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {generatedGallery.map(item => (
+                <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden group hover:border-slate-700 transition-all shadow-lg flex flex-col justify-between">
+                  <div className="aspect-video relative overflow-hidden bg-slate-950">
+                    <img src={item.url} alt={item.prompt} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-mono text-cyan-300 border border-slate-800">
+                      {item.style}
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <p className="text-xs text-slate-300 line-clamp-2 font-medium">{item.prompt}</p>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPrompt(item.prompt, item.id)}
+                        className="text-[10px] font-mono text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedId === item.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedId === item.id ? 'Copied' : 'Copy Prompt'}</span>
+                      </button>
+                      <a
+                        href={item.url}
+                        download="commercial-asset.jpg"
+                        className="p-1.5 text-slate-400 hover:text-cyan-300 bg-slate-800 rounded-lg border border-slate-700 transition-colors"
+                        title="Download image"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {notice && (
             <div className="p-3 bg-emerald-950 border border-emerald-700/60 rounded-xl text-xs text-emerald-300 font-medium flex items-center justify-between">

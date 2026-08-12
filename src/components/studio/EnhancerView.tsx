@@ -23,9 +23,7 @@ export default function EnhancerView() {
   const [progress, setProgress] = useState<number>(0);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const [imageUrl, setImageUrl] = useState<string>(
-    'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=1200&q=80'
-  );
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   const handleEnhance = () => {
     setIsEnhancing(true);
@@ -204,11 +202,26 @@ export default function EnhancerView() {
             </span>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group">
-            <img src={imageUrl} alt="Enhanced preview" className="w-full h-full object-cover" />
-            <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-700 text-[10px] font-mono text-amber-300 font-bold">
-              ENHANCED 4K HDR OUTPUT
-            </div>
+          <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group flex items-center justify-center">
+            {imageUrl ? (
+              <>
+                <img src={imageUrl} alt="Enhanced preview" className="w-full h-full object-cover" />
+                <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-lg border border-slate-700 text-[10px] font-mono text-amber-300 font-bold">
+                  ENHANCED 4K HDR OUTPUT
+                </div>
+              </>
+            ) : (
+              <label className="w-full h-full border-2 border-dashed border-slate-800 hover:border-purple-500/60 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer transition-colors space-y-3 text-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-purple-400">
+                  <Upload className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-white">Upload Image or Video Clip</div>
+                  <div className="text-[10px] text-slate-400">Drag & drop or click to upload your custom media for AI 4K enhancement</div>
+                </div>
+                <input type="file" accept="image/*,video/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            )}
           </div>
 
           {notice && (
