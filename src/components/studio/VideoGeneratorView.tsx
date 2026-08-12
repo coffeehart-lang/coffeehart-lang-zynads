@@ -204,12 +204,30 @@ export default function VideoGeneratorView() {
   }, []);
 
   // Speech & Audio Narration Triggering for Commercial Script
-  const speakLine = useCallback((text: string) => {
+  const speakLine = useCallback(async (text: string) => {
     if (isMuted || typeof window === 'undefined') return;
+
+    // Try Gemini TTS API first for natural human voice
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: 'Zephyr' })
+      });
+      const data = await res.json();
+      if (data.success && data.audioBase64) {
+        const audio = new Audio(`data:${data.mimeType || 'audio/mp3'};base64,${data.audioBase64}`);
+        audio.play().catch(() => {});
+        return;
+      }
+    } catch (e) {
+      console.warn("Gemini TTS fallback to browser speech:", e);
+    }
+
+    // Natural Web Speech synthesis fallback
     try {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        // Phonetically format acronyms for crisp speech synthesis pronunciation
         const phoneticText = text
           .replace(/Zyncast CFO/gi, "Zincast C. F. O.")
           .replace(/Zyncastcfo/gi, "Zincast C. F. O.")
@@ -220,7 +238,7 @@ export default function VideoGeneratorView() {
         utterance.rate = 0.95; // Steady, clear pacing
         utterance.pitch = 1.0;
         const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('David') || v.name.includes('Samantha')));
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google US English') || v.name.includes('David') || v.name.includes('Samantha') || v.name.includes('Alex')));
         if (preferredVoice) utterance.voice = preferredVoice;
         window.speechSynthesis.speak(utterance);
       }
@@ -330,26 +348,23 @@ export default function VideoGeneratorView() {
         ctx.fillRect(width * 0.1, height * 0.4, 24, height * 0.3);
         ctx.fillRect(width * 0.85, height * 0.4, 24, height * 0.3);
         ctx.fillRect(width * 0.05, height * 0.45, width * 0.9, 12);
-      }
 
-      // Presenter Character Silhouette / Overlay on Porch
-      ctx.save();
-      const mouthMove = Math.abs(Math.sin(t * 12)) * 6;
-      ctx.fillStyle = '#1e293b';
-      // Head
-      ctx.beginPath();
-      ctx.arc(width * 0.35, height * 0.45, 28, 0, Math.PI * 2);
-      ctx.fill();
-      // Shoulders/Torso
-      ctx.beginPath();
-      ctx.ellipse(width * 0.35, height * 0.70, 50, 80, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Animated Talking Mouth
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.ellipse(width * 0.35, height * 0.47, 6, 2 + mouthMove / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+        // Presenter Character Silhouette
+        ctx.save();
+        const mouthMove = Math.abs(Math.sin(t * 12)) * 6;
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(width * 0.35, height * 0.45, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(width * 0.35, height * 0.70, 50, 80, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.ellipse(width * 0.35, height * 0.47, 6, 2 + mouthMove / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Atmospheric Vignette
       const grad = ctx.createRadialGradient(width / 2, height / 2, width * 0.3, width / 2, height / 2, width * 0.75);

@@ -407,6 +407,51 @@ Respond with ONLY a strict JSON object with these exact keys:
     }
   });
 
+  // Gemini Text-to-Speech (TTS) Endpoint
+  app.post("/api/tts", async (req, res: any) => {
+    try {
+      const key = process.env.GEMINI_API_KEY;
+      const { text, voice = 'Zephyr' } = req.body;
+
+      if (!text) {
+        return res.status(400).json({ error: "Text is required for TTS." });
+      }
+
+      if (key) {
+        const ai = new GoogleGenAI({ apiKey: key });
+        try {
+          const response = await ai.models.generateContent({
+            model: "gemini-3.1-flash-tts-preview",
+            contents: [{ parts: [{ text }] }],
+            config: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: voice } // 'Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir'
+                }
+              }
+            }
+          });
+
+          const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          if (base64Audio) {
+            return res.json({ success: true, audioBase64: base64Audio, mimeType: 'audio/mp3' });
+          }
+        } catch (e: any) {
+          console.warn("Gemini TTS model info:", e?.message || e);
+        }
+      }
+
+      return res.json({
+        success: false,
+        message: "Gemini TTS fallback to browser natural speech"
+      });
+    } catch (err: any) {
+      console.error("TTS Route Error:", err);
+      res.status(500).json({ error: "TTS generation failed", message: err.message });
+    }
+  });
+
   // AI Audio Transcription Endpoint (Gemini 3.6 Flash Audio Model + Procedural Fallback)
   app.post("/api/zynads/transcribe", async (req, res: any) => {
     try {
