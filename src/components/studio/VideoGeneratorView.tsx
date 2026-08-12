@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { processAndPlayAudioBase64 } from '../../utils/audioProcessor';
 import { 
   Sparkles, 
   Video, 
@@ -216,8 +217,7 @@ export default function VideoGeneratorView() {
       });
       const data = await res.json();
       if (data.success && data.audioBase64) {
-        const audio = new Audio(`data:${data.mimeType || 'audio/mp3'};base64,${data.audioBase64}`);
-        audio.play().catch(() => {});
+        await processAndPlayAudioBase64(data.audioBase64, data.mimeType || 'audio/mp3');
         return;
       }
     } catch (e) {

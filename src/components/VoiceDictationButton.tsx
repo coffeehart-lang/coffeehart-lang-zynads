@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Sparkles, AlertCircle, Loader2, Volume2 } from 'lucide-react';
+import { createProcessedAudioStream } from '../utils/audioProcessor';
 
 interface VoiceDictationButtonProps {
   onTranscript: (text: string) => void;
@@ -175,14 +176,18 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Microphone audio API not supported in this browser environment.');
       }
-      stream = await navigator.mediaDevices.getUserMedia({
+      const rawStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
         },
       });
-      streamRef.current = stream;
+      
+      // Apply Web Audio DSP Pipeline: Normalization, High-Pass Cutoff, Vocal EQ, Dynamic Compressor
+      const { processedStream } = createProcessedAudioStream(rawStream);
+      stream = processedStream;
+      streamRef.current = rawStream; // Keep rawStream reference for track cleanup on stop
     } catch (err: any) {
       console.error('Microphone getUserMedia error:', err);
       shouldListenRef.current = false;

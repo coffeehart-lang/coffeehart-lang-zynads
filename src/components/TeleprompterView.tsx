@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { VoiceDictationButton } from './VoiceDictationButton';
+import { AudioWaveformVisualizer } from './AudioWaveformVisualizer';
+import { createProcessedAudioStream } from '../utils/audioProcessor';
 import VideoGeneratorView from './studio/VideoGeneratorView';
 import RealtimeCanvasView from './studio/RealtimeCanvasView';
 import EnhancerView from './studio/EnhancerView';
@@ -603,26 +605,46 @@ export default function TeleprompterView() {
     } else {
       try {
         setCameraError(null);
-        let stream: MediaStream;
+        let rawStream: MediaStream;
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
+          rawStream = await navigator.mediaDevices.getUserMedia({
             video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: true
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
           });
         } catch (audioErr) {
           console.warn("Camera with audio failed, attempting video only:", audioErr);
-          stream = await navigator.mediaDevices.getUserMedia({
+          rawStream = await navigator.mediaDevices.getUserMedia({
             video: { width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: false
           });
         }
+
+        let stream = rawStream;
+        if (rawStream.getAudioTracks().length > 0) {
+          try {
+            const { processedStream } = createProcessedAudioStream(rawStream);
+            const videoTrack = rawStream.getVideoTracks()[0];
+            const audioTrack = processedStream.getAudioTracks()[0];
+            const compositeStream = new MediaStream();
+            if (videoTrack) compositeStream.addTrack(videoTrack);
+            if (audioTrack) compositeStream.addTrack(audioTrack);
+            stream = compositeStream;
+          } catch (dspErr) {
+            console.warn("DSP audio filter fallback:", dspErr);
+          }
+        }
+
         mediaStreamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
         setIsCameraOn(true);
         setCameraDisplayMode('pip');
-        setLastGeneratedNotice("🎥 Camera activated! Webcam framed in Zyncast Virtual Studio Stage with background.");
+        setLastGeneratedNotice("🎥 Camera activated! Audio normalized & enhanced with Web Audio API DSP filter.");
       } catch (err: any) {
         console.error("Camera access error:", err);
         setCameraError("Unable to access camera/microphone. Please grant camera permissions in your browser.");
@@ -2969,6 +2991,17 @@ export default function TeleprompterView() {
               height={720}
               className="w-full h-full object-contain"
             />
+
+            {/* Real-time Audio Waveform Visualizer & Level Monitor HUD */}
+            {isCameraOn && (
+              <div className="absolute bottom-4 right-4 z-30 w-72 max-w-[85vw] pointer-events-auto">
+                <AudioWaveformVisualizer
+                  stream={mediaStreamRef.current}
+                  isRecording={isRecording}
+                  showDetails={true}
+                />
+              </div>
+            )}
 
             {/* Pulsing REC Indicator & Visual Timer Overlay when Recording */}
             {(isRecording || isGeneratingVideo) && (

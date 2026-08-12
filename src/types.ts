@@ -4,6 +4,17 @@ export type CampaignStatus = 'Active' | 'Paused' | 'Scheduled' | 'Completed';
 
 export type CampaignObjective = 'Conversions' | 'Lead Generation' | 'Brand Awareness' | 'Website Traffic' | 'App Installs';
 
+export interface CampaignAudioSettings {
+  gainLevel: number; // e.g. 1.25 (gain boost factor)
+  sampleRate: number; // e.g. 48000 or 44100 Hz
+  highPassCutoff?: number; // High-pass filter frequency in Hz (e.g. 85)
+  presenceBoostDb?: number; // Vocal presence boost in dB (e.g. 3.5)
+  deHarshGainDb?: number; // High-frequency anti-robotic cut in dB (e.g. -3.0)
+  targetPeakDb?: number; // Normalized peak target (e.g. 0.95)
+  noiseSuppression?: boolean; // Noise suppression state
+  echoCancellation?: boolean; // Echo cancellation state
+}
+
 export interface AdCampaign {
   id: string;
   name: string;
@@ -22,6 +33,7 @@ export interface AdCampaign {
   targetAudience: string;
   headlines: string[];
   adCopy: string;
+  audioSettings?: CampaignAudioSettings;
 }
 
 export interface AdCreativeAsset {

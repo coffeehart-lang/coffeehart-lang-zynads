@@ -18,7 +18,17 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     startDate: '2026-07-01',
     targetAudience: 'Tech Founders & Marketing Directors (US, CA, UK)',
     headlines: ['Scale Your Ad ROI by 4x', 'Stop Wasting Ad Spend Today', 'The Smarter Way to Run Campaigns'],
-    adCopy: 'Unlock maximum return on ad spend with automated audience optimization and instant creative insights. Start your 14-day trial now!'
+    adCopy: 'Unlock maximum return on ad spend with automated audience optimization and instant creative insights. Start your 14-day trial now!',
+    audioSettings: {
+      gainLevel: 1.25,
+      sampleRate: 48000,
+      highPassCutoff: 85,
+      presenceBoostDb: 3.5,
+      deHarshGainDb: -3.0,
+      targetPeakDb: 0.95,
+      noiseSuppression: true,
+      echoCancellation: true
+    }
   },
   {
     id: 'camp-102',
