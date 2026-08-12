@@ -249,6 +249,68 @@ export class QuickBooksIntegration {
   }
 
   /**
+   * Generates a high-level Payroll Summary CSV specifically structured for QuickBooks Online summary import.
+   */
+  static exportPayrollSummaryCSV(employees: Employee[], options: QuickBooksExportOptions): string {
+    const { companyName, payPeriod, payDate, vaultAccountName, isCashOnlyMode, isSection280ECompliant } = options;
+    const accountName = vaultAccountName || (isCashOnlyMode ? 'Vault Cash Safe Account' : 'Operating Payroll Checking Account');
+
+    let totalGross = 0;
+    let totalTax = 0;
+    let totalDeductions = 0;
+    let totalNet = 0;
+
+    employees.forEach(emp => {
+      const gross = emp.type === 'W-2 Salary' ? (emp.payRate + emp.bonus) : ((emp.hoursWorked * emp.payRate) + (emp.overtimeHours * emp.payRate * 1.5) + emp.bonus);
+      const tax = (options.applyTaxWithholdings ?? true) ? (gross * emp.taxWithholdingPct) / 100 : 0;
+      const net = Math.max(0, gross - tax - emp.deductions);
+
+      totalGross += gross;
+      totalTax += tax;
+      totalDeductions += emp.deductions;
+      totalNet += net;
+    });
+
+    const summaryRows = [
+      ['QuickBooks Online - Payroll Summary Import File'],
+      ['Company Name', `"${companyName}"`],
+      ['Pay Period', `"${payPeriod}"`],
+      ['Posting Date', payDate],
+      ['Disbursement Account', `"${accountName}"`],
+      ['Disbursement Mode', isCashOnlyMode ? 'Physical Cash Vault Envelopes' : 'Standard Direct Deposit ACH'],
+      ['Tax Compliance Tag', isCashOnlyMode && isSection280ECompliant ? 'IRC §280E COGS Labor Deductible' : 'Standard W-2/1099 Payroll'],
+      [],
+      ['Summary Account Name', 'QuickBooks Account Type', 'Amount ($)', 'Memo / Description'],
+      ['Gross Wages & Salaries Expense', 'Expense', totalGross.toFixed(2), `Total Gross Payroll for ${payPeriod}`],
+      ['Payroll Tax Withholding Payable', 'Other Current Liability', (-totalTax).toFixed(2), 'Total Estimated Federal/State Tax Withholdings'],
+      ['Employee Benefits & Deductions Payable', 'Other Current Liability', (-totalDeductions).toFixed(2), 'Total Voluntary Deductions & Benefits'],
+      ['Net Payout Disbursement', 'Bank / Cash Vault', (-totalNet).toFixed(2), `Net Payroll Payout via ${accountName}`],
+      [],
+      ['# Employee Roster Payout Breakdown'],
+      ['Employee ID', 'Employee Name', 'Role / Department', 'Type', 'Gross Pay ($)', 'Tax ($)', 'Deductions ($)', 'Net Payout ($)', 'Status'],
+      ...employees.map(emp => {
+        const gross = emp.type === 'W-2 Salary' ? (emp.payRate + emp.bonus) : ((emp.hoursWorked * emp.payRate) + (emp.overtimeHours * emp.payRate * 1.5) + emp.bonus);
+        const tax = (options.applyTaxWithholdings ?? true) ? (gross * emp.taxWithholdingPct) / 100 : 0;
+        const net = Math.max(0, gross - tax - emp.deductions);
+
+        return [
+          emp.id,
+          `"${emp.name}"`,
+          `"${emp.role}"`,
+          emp.type,
+          gross.toFixed(2),
+          tax.toFixed(2),
+          emp.deductions.toFixed(2),
+          net.toFixed(2),
+          isCashOnlyMode && net >= 10000 ? 'IRS Form 8300 Flag' : 'Cleared'
+        ];
+      })
+    ];
+
+    return summaryRows.map(row => row.join(',')).join('\n');
+  }
+
+  /**
    * Formats current payroll entries and summary data into a JSON structure compliant with QuickBooks Online API / import requirements.
    */
   static formatPayrollToJSON(employees: Employee[], options: QuickBooksExportOptions) {

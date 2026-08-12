@@ -171,8 +171,56 @@ export default function App() {
       </div>
 
       {/* Main content body */}
-      <main id="main-content-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-10 md:px-12">
-        <div className="max-w-6xl mx-auto">
+      <main id="main-content-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 md:px-10">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Executive CFO Quick Navigation Ribbon */}
+          <div className="bg-slate-900/90 border border-emerald-500/30 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white shadow-md">
+                <Zap className="w-4 h-4 text-emerald-200" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider block">
+                  ZyncastCFO Executive Shortcuts
+                </span>
+                <span className="text-xs font-extrabold text-slate-100">
+                  Quick Access to Financial Tools & Audits
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setActiveTab('payroll')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'payroll'
+                    ? 'bg-emerald-500 text-slate-950 shadow-lg font-extrabold'
+                    : 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30'
+                }`}
+              >
+                <span>💳 Payroll & QuickBooks</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('payroll')}
+                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer border border-emerald-400/30"
+              >
+                <span>🤖 8-Cycle AI Audit</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('budget-calculator')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'budget-calculator'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                }`}
+              >
+                <span>📈 Budget & Profit Engine</span>
+              </button>
+            </div>
+          </div>
+
           {activeTab === 'dashboard' && (
             <DashboardView 
               campaigns={campaigns}

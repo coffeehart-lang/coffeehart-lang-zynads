@@ -42,32 +42,66 @@ export default function DashboardView({
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-2xl border border-slate-800 text-white shadow-lg">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-mono font-bold uppercase rounded border border-indigo-500/30">
-              Live Ad Network Sync
-            </span>
-            <span className="text-xs text-slate-400">All Platforms Active</span>
+      {/* ZyncastCFO Executive Financial & Payroll Hub */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-6 rounded-3xl border border-emerald-500/40 text-white shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold uppercase rounded border border-emerald-500/40">
+                ZyncastCFO Executive Financial Hub
+              </span>
+              <span className="text-xs text-emerald-400 font-mono font-semibold">● QuickBooks Synced</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-white">Payroll, Cash Vault & 8-Cycle AI Fail-Safe Audit</h3>
+            <p className="text-xs text-slate-300 mt-1">
+              Manage W-2 / 1099 payrolls, execute 8-cycle AI audits, toggle Cash-Only Vault Mode (280E dispensary compliant), and export directly to QuickBooks Online.
+            </p>
           </div>
-          <h2 className="text-2xl font-bold font-sans tracking-tight">ZynAds Performance Overview</h2>
-          <p className="text-xs text-slate-300 mt-1">
-            Real-time campaign telemetry, cross-channel ROAS, and instant ad optimization.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+
           <button
-            onClick={() => setActiveTab('ai-optimizer')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            onClick={() => setActiveTab('payroll')}
+            className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg flex items-center gap-2 transition-all cursor-pointer shrink-0"
           >
-            <Sparkles className="w-3.5 h-3.5" /> Optimize Copy & Strategy
+            <span>Open Full Payroll Suite &rarr;</span>
           </button>
+        </div>
+
+        {/* Quick Action Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <button
-            onClick={() => setActiveTab('campaigns')}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+            onClick={() => setActiveTab('payroll')}
+            className="p-3 bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 rounded-2xl text-left transition-all cursor-pointer group"
           >
-            <Plus className="w-3.5 h-3.5" /> Launch Ad Campaign
+            <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase">1. Payroll & W-2/1099s</div>
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Manage Employees & Wages</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">Calculate net pay, withholdings & deductions</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className="p-3 bg-slate-900/80 hover:bg-slate-800/90 border border-emerald-500/30 rounded-2xl text-left transition-all cursor-pointer group"
+          >
+            <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase">2. QuickBooks Export</div>
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Export QBO CSV & IIF</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">1-click double-entry GL journal export</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className="p-3 bg-slate-900/80 hover:bg-slate-800/90 border border-amber-500/40 rounded-2xl text-left transition-all cursor-pointer group"
+          >
+            <div className="text-[10px] font-mono font-bold text-amber-400 uppercase">3. Cash-Only Vault Mode</div>
+            <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">Physical Cash & 280E COGS</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">Exact bill denomination count ($100, $50, $20)</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className="p-3 bg-gradient-to-r from-emerald-950 to-teal-950 hover:from-emerald-900 hover:to-teal-900 border border-emerald-400/50 rounded-2xl text-left transition-all cursor-pointer group"
+          >
+            <div className="text-[10px] font-mono font-bold text-emerald-300 uppercase">4. 8-Cycle AI Audit</div>
+            <div className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">Run Zero-Error Audit</div>
+            <p className="text-[10px] text-slate-300 mt-0.5">Gemini cryptographic zero-error seal</p>
           </button>
         </div>
       </div>
