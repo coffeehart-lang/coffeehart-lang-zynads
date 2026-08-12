@@ -5,13 +5,15 @@ export type CampaignStatus = 'Active' | 'Paused' | 'Scheduled' | 'Completed';
 export type CampaignObjective = 'Conversions' | 'Lead Generation' | 'Brand Awareness' | 'Website Traffic' | 'App Installs';
 
 export interface CampaignAudioSettings {
-  gainLevel: number; // e.g. 1.25 (gain boost factor)
-  sampleRate: number; // e.g. 48000 or 44100 Hz
+  gain: number; // Gain level boost factor (e.g. 1.25)
+  gainLevel?: number; // Alias for gain level boost factor
+  sampleRate: number; // Audio sample rate in Hz (e.g. 48000 or 44100)
+  noiseReduction: boolean; // Noise reduction state
+  noiseSuppression?: boolean; // Alias for noise suppression state
   highPassCutoff?: number; // High-pass filter frequency in Hz (e.g. 85)
   presenceBoostDb?: number; // Vocal presence boost in dB (e.g. 3.5)
   deHarshGainDb?: number; // High-frequency anti-robotic cut in dB (e.g. -3.0)
   targetPeakDb?: number; // Normalized peak target (e.g. 0.95)
-  noiseSuppression?: boolean; // Noise suppression state
   echoCancellation?: boolean; // Echo cancellation state
 }
 

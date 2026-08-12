@@ -1093,7 +1093,8 @@ export default function VideoGeneratorView() {
               >
                 <option value="Krea 2 (K2 - SingleMMDiT)">⚡ Krea 2 (K2 - SingleMMDiT)</option>
                 <option value="Krea 2 Turbo (K2 Wide MMDiT)">🚀 Krea 2 Turbo (K2 Wide)</option>
-                <option value="Wan 2.1 T2V (WanModel DiT)">🌊 Wan 2.1 T2V (WanModel DiT)</option>
+                <option value="Wan 2.1 T2V 1.3B (Compact DiT)">🌊 Wan 2.1 T2V 1.3B (Compact DiT)</option>
+                <option value="Wan 2.1 T2V 14B (High-Res DiT)">✨ Wan 2.1 T2V 14B (High-Res DiT)</option>
                 <option value="Wan 2.1 I2V (WanModel DiT)">🖼️ Wan 2.1 I2V (WanModel DiT)</option>
                 <option value="Seedance 2.5">Seedance 2.5</option>
                 <option value="Nano Banana Pro 2.5">🍌 Nano Banana Pro 2.5</option>
@@ -1361,24 +1362,27 @@ export default function VideoGeneratorView() {
                   {/* Wan 2.1 Text-to-Video (WanT2V) Pipeline Specifications */}
                   <div className="bg-[#11131a] p-3 rounded-lg border border-slate-800/80 space-y-1.5 md:col-span-3">
                     <div className="text-pink-400 font-bold text-[11px] flex items-center justify-between">
-                      <span>6. Wan 2.1 Text-to-Video (WanT2V) Direct Generation Pipeline</span>
+                      <span>6. Wan 2.1 Text-to-Video (WanT2V 1.3B & 14B) DiT Pipelines</span>
                       <span className="text-[9px] bg-pink-950 px-1.5 py-0.5 rounded text-pink-300 font-mono">
-                        Solver: {wanSolver === 'unipc' ? 'FlowUniPCMultistep' : 'FlowDPMSolverMultistep'} • Sampling Steps: 50
+                        Solver: {wanSolver === 'unipc' ? 'FlowUniPCMultistep' : 'FlowDPMSolverMultistep'} • Active: {selectedModel.includes('1.3B') ? 'Wan 1.3B (1536 dim / 30 layers)' : 'Wan 14B (5120 dim / 40 layers)'}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[10px] text-slate-300">
                       <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
-                        <div className="text-slate-400 font-bold">Text Conditioning</div>
-                        <div>• <strong className="text-white">Encoder:</strong> T5EncoderModel (UMT5-XXL / t5_cpu or t5_fsdp)</div>
-                        <div>• <strong className="text-white">Negative Prompt:</strong> Configurable n_prompt or sample_neg_prompt</div>
+                        <div className="text-slate-400 font-bold">Wan 2.1 1.3B Compact DiT</div>
+                        <div>• <strong className="text-white">Hidden Dim:</strong> 1536 (12 heads, ffn_dim: 8960)</div>
+                        <div>• <strong className="text-white">Depth:</strong> 30 layers (patch: [1, 2, 2])</div>
+                        <div>• <strong className="text-white">Text Encoder:</strong> UMT5-XXL / t5_checkpoint</div>
                       </div>
                       <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
-                        <div className="text-slate-400 font-bold">Target Noise Tensor</div>
-                        <div>• <strong className="text-white">Dimensions:</strong> (z_dim=16, 21, height//8, width//8)</div>
-                        <div>• <strong className="text-white">Sequence Length:</strong> Sequence parallel (sp_size) context math</div>
+                        <div className="text-slate-400 font-bold">Wan 2.1 14B High-Res DiT</div>
+                        <div>• <strong className="text-white">Hidden Dim:</strong> 5120 (40 heads, ffn_dim: 13824)</div>
+                        <div>• <strong className="text-white">Depth:</strong> 40 layers (patch: [1, 2, 2])</div>
+                        <div>• <strong className="text-white">Attention:</strong> QK-Norm & Cross-Attn Norm (eps: 1e-6)</div>
                       </div>
                       <div className="bg-[#0b0c12] p-2 rounded border border-slate-800 space-y-1">
                         <div className="text-slate-400 font-bold">Flow Sampler & Offloading</div>
+                        <div>• <strong className="text-white">VAE Stride:</strong> (4, 8, 8) Wan2.1_VAE</div>
                         <div>• <strong className="text-white">Guidance Scale:</strong> {wanGuideScale} CFG</div>
                         <div>• <strong className="text-white">Memory Mgmt:</strong> Sequential GPU offload & gc.collect()</div>
                       </div>

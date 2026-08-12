@@ -20,13 +20,15 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     headlines: ['Scale Your Ad ROI by 4x', 'Stop Wasting Ad Spend Today', 'The Smarter Way to Run Campaigns'],
     adCopy: 'Unlock maximum return on ad spend with automated audience optimization and instant creative insights. Start your 14-day trial now!',
     audioSettings: {
+      gain: 1.25,
       gainLevel: 1.25,
       sampleRate: 48000,
+      noiseReduction: true,
+      noiseSuppression: true,
       highPassCutoff: 85,
       presenceBoostDb: 3.5,
       deHarshGainDb: -3.0,
       targetPeakDb: 0.95,
-      noiseSuppression: true,
       echoCancellation: true
     }
   },
