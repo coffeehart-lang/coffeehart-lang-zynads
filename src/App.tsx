@@ -120,12 +120,12 @@ export default function App() {
       {/* Mobile Header */}
       <header id="mobile-header" className="md:hidden flex items-center justify-between px-6 py-4 bg-slate-950 text-white border-b border-slate-800 shrink-0 z-40">
         <div id="mobile-brand-wrapper" className="flex items-center gap-3">
-          <div id="mobile-logo-icon" className="p-1.5 bg-indigo-600 rounded-md text-white flex items-center justify-center">
-            <Megaphone className="w-4 h-4" />
+          <div id="mobile-logo-icon" className="p-1.5 bg-emerald-600 rounded-md text-white flex items-center justify-center">
+            <Zap className="w-4 h-4 text-emerald-200" />
           </div>
-          <a href="https://zynads.zyncastcfo.com" target="_blank" rel="noopener noreferrer" id="mobile-brand-title" className="font-sans font-bold text-base tracking-tight leading-none text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity">
-            Zyn<span className="text-indigo-400 font-extrabold">Ads</span>
-            <span className="text-[9px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/80 px-1.5 py-0.5 rounded">ALL-IN-ONE</span>
+          <a href="https://zyncastcfo.com" target="_blank" rel="noopener noreferrer" id="mobile-brand-title" className="font-sans font-bold text-base tracking-tight leading-none text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+            Zyncast<span className="text-emerald-400 font-extrabold">CFO</span>
+            <span className="text-[9px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/80 px-1.5 py-0.5 rounded">SUITE</span>
           </a>
         </div>
         <button
