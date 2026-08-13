@@ -79,6 +79,87 @@ export default function PayrollView() {
   const [qboConnectedAt, setQboConnectedAt] = useState<string>('');
   const [isUploadingDirect, setIsUploadingDirect] = useState<boolean>(false);
 
+  // QUICKBOOKS EXPORT HISTORY LOG STATE
+  interface ExportHistoryItem {
+    id: string;
+    timestamp: string;
+    type: 'CSV Export' | 'IIF Desktop' | 'Direct QBO Sync' | 'Journal Copied';
+    payPeriod: string;
+    companyName: string;
+    totalAmount: number;
+    employeeCount: number;
+    status: 'SUCCESS' | 'DIRECT_POSTED' | 'COPIED';
+    mode: string;
+    batchId?: string;
+  }
+
+  const INITIAL_EXPORT_HISTORY: ExportHistoryItem[] = [
+    {
+      id: 'qb-log-1',
+      timestamp: '2026-08-12 02:30:15 PM',
+      type: 'Direct QBO Sync',
+      payPeriod: 'Aug 1, 2026 - Aug 15, 2026',
+      companyName: 'Zyncast Advertising & Media LLC',
+      totalAmount: 11096.15,
+      employeeCount: 4,
+      status: 'DIRECT_POSTED',
+      mode: 'Standard Direct Deposit ACH',
+      batchId: 'QBO-SYNC-8F32A'
+    },
+    {
+      id: 'qb-log-2',
+      timestamp: '2026-08-01 09:15:22 AM',
+      type: 'CSV Export',
+      payPeriod: 'Jul 15, 2026 - Jul 31, 2026',
+      companyName: 'Zyncast Advertising & Media LLC',
+      totalAmount: 10850.00,
+      employeeCount: 4,
+      status: 'SUCCESS',
+      mode: 'Standard Direct Deposit ACH'
+    }
+  ];
+
+  const [exportHistory, setExportHistory] = useState<ExportHistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('zyncast_qb_export_history');
+      return saved ? JSON.parse(saved) : INITIAL_EXPORT_HISTORY;
+    } catch {
+      return INITIAL_EXPORT_HISTORY;
+    }
+  });
+
+  const addExportHistory = (item: Omit<ExportHistoryItem, 'id' | 'timestamp'>) => {
+    const newItem: ExportHistoryItem = {
+      ...item,
+      id: `qb-log-${Date.now()}`,
+      timestamp: new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
+    };
+    setExportHistory(prev => {
+      const updated = [newItem, ...prev];
+      try {
+        localStorage.setItem('zyncast_qb_export_history', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+  };
+
+  const clearExportHistory = () => {
+    setExportHistory([]);
+    try {
+      localStorage.removeItem('zyncast_qb_export_history');
+    } catch {}
+  };
+
   // Check connection status & setup postMessage listener for OAuth Handshake popup
   useEffect(() => {
     QuickBooksIntegration.checkConnectionStatus().then(status => {
@@ -137,6 +218,17 @@ export default function PayrollView() {
       const res = await QuickBooksIntegration.uploadCSVDirectToQuickBooks(csvContent, exportOptions);
 
       if (res.success) {
+        addExportHistory({
+          type: 'Direct QBO Sync',
+          payPeriod,
+          companyName: res.companyName || companyName,
+          totalAmount: totals.gross,
+          employeeCount: employees.length,
+          status: 'DIRECT_POSTED',
+          mode: isCashOnlyMode ? 'Physical Cash Vault Envelopes' : 'Standard Direct Deposit ACH',
+          batchId: res.batchId || `QBO-DIRECT-${Date.now().toString(36).toUpperCase()}`
+        });
+
         setNotice(`🚀 Direct Upload Success! Posted ${res.rowsProcessed} journal records directly to QuickBooks Online (Company ID: ${res.realmId || qboRealmId || '913035284910238'}). Batch ID: ${res.batchId}`);
         setTimeout(() => setNotice(null), 7000);
       } else {
@@ -359,6 +451,16 @@ export default function PayrollView() {
     link.click();
     document.body.removeChild(link);
 
+    addExportHistory({
+      type: 'CSV Export',
+      payPeriod,
+      companyName,
+      totalAmount: totals.gross,
+      employeeCount: employees.length,
+      status: 'SUCCESS',
+      mode: isCashOnlyMode ? 'Physical Cash Vault Envelopes' : 'Standard Direct Deposit ACH'
+    });
+
     setNotice(`Exported QuickBooks Journal Entry CSV (${isCashOnlyMode ? 'Cash Vault/Dispensary Mode' : 'Standard Direct Deposit'})!`);
     setTimeout(() => setNotice(null), 3500);
   };
@@ -374,6 +476,16 @@ export default function PayrollView() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    addExportHistory({
+      type: 'IIF Desktop',
+      payPeriod,
+      companyName,
+      totalAmount: totals.gross,
+      employeeCount: employees.length,
+      status: 'SUCCESS',
+      mode: isCashOnlyMode ? 'Physical Cash Vault Envelopes' : 'Standard Direct Deposit ACH'
+    });
 
     setNotice("Exported QuickBooks Desktop IIF File!");
     setTimeout(() => setNotice(null), 3500);
@@ -403,6 +515,17 @@ export default function PayrollView() {
     text += `\nTotal Balanced Entry: $${totals.gross.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
     navigator.clipboard.writeText(text);
+
+    addExportHistory({
+      type: 'Journal Copied',
+      payPeriod,
+      companyName,
+      totalAmount: totals.gross,
+      employeeCount: employees.length,
+      status: 'COPIED',
+      mode: isCashOnlyMode ? 'Physical Cash Vault Envelopes' : 'Standard Direct Deposit ACH'
+    });
+
     setCopiedQb(true);
     setTimeout(() => setCopiedQb(false), 3000);
   };
@@ -1199,6 +1322,101 @@ export default function PayrollView() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* QuickBooks Export History & Synchronization Log */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-extrabold text-white">QuickBooks Export History & Synchronization Log</h3>
+                <span className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+                  {exportHistory.length} Recorded
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Audit trail of CSV exports, IIF desktop files, and direct OAuth 2.0 postings to QuickBooks Online.
+              </p>
+            </div>
+          </div>
+
+          {exportHistory.length > 0 && (
+            <button
+              onClick={clearExportHistory}
+              className="text-xs text-slate-400 hover:text-rose-400 font-bold transition-colors cursor-pointer self-start sm:self-auto"
+            >
+              Clear Log History
+            </button>
+          )}
+        </div>
+
+        {exportHistory.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <p className="text-xs text-slate-400">No export logs recorded yet.</p>
+            <p className="text-[11px] text-slate-500">Export a CSV or direct upload to QuickBooks to create your first entry.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 font-mono font-bold uppercase text-[10px] bg-slate-950/60">
+                  <th className="py-3 px-3">Date & Timestamp</th>
+                  <th className="py-3 px-3">Export Type</th>
+                  <th className="py-3 px-3">Company & Pay Period</th>
+                  <th className="py-3 px-3">Mode / Batch ID</th>
+                  <th className="py-3 px-3 text-right">Gross Total</th>
+                  <th className="py-3 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 font-medium">
+                {exportHistory.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-3 px-3 font-mono text-[11px] text-slate-300">
+                      {item.timestamp}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        {item.type === 'Direct QBO Sync' && <Zap className="w-3.5 h-3.5 text-emerald-400" />}
+                        {item.type === 'CSV Export' && <Download className="w-3.5 h-3.5 text-teal-400" />}
+                        {item.type === 'IIF Desktop' && <FileText className="w-3.5 h-3.5 text-indigo-400" />}
+                        {item.type === 'Journal Copied' && <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                        {item.type}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="font-bold text-slate-200">{item.companyName}</div>
+                      <div className="text-[10px] text-slate-400">{item.payPeriod} ({item.employeeCount} team members)</div>
+                    </td>
+                    <td className="py-3 px-3 text-[11px] text-slate-300">
+                      <div>{item.mode}</div>
+                      {item.batchId && (
+                        <div className="font-mono text-[10px] text-emerald-400 font-bold">{item.batchId}</div>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">
+                      ${item.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider inline-block ${
+                        item.status === 'DIRECT_POSTED'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                          : item.status === 'SUCCESS'
+                          ? 'bg-teal-500/20 text-teal-300 border border-teal-400/40'
+                          : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/40'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Add Team Member Modal */}
