@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Users, 
   DollarSign, 
@@ -71,6 +71,84 @@ export default function PayrollView() {
   const [selectedStub, setSelectedStub] = useState<Employee | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showVaultReceiptModal, setShowVaultReceiptModal] = useState(false);
+
+  // QUICKBOOKS ONLINE OAUTH 2.0 HANDSHAKE & DIRECT UPLOAD STATE
+  const [qboConnected, setQboConnected] = useState<boolean>(false);
+  const [qboRealmId, setQboRealmId] = useState<string>('');
+  const [qboCompanyName, setQboCompanyName] = useState<string>('');
+  const [qboConnectedAt, setQboConnectedAt] = useState<string>('');
+  const [isUploadingDirect, setIsUploadingDirect] = useState<boolean>(false);
+
+  // Check connection status & setup postMessage listener for OAuth Handshake popup
+  useEffect(() => {
+    QuickBooksIntegration.checkConnectionStatus().then(status => {
+      if (status.connected) {
+        setQboConnected(true);
+        setQboRealmId(status.realmId || '913035284910238');
+        setQboCompanyName(status.companyName || 'QuickBooks Online Production Ledger');
+        setQboConnectedAt(status.connectedAt || new Date().toISOString());
+      }
+    });
+
+    const handleMessage = (event: MessageEvent) => {
+      const origin = event.origin;
+      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+        return;
+      }
+      if (event.data?.type === 'QUICKBOOKS_OAUTH_SUCCESS') {
+        setQboConnected(true);
+        setQboRealmId(event.data.realmId || '913035284910238');
+        setQboCompanyName(event.data.companyName || 'QuickBooks Online Production Ledger');
+        setQboConnectedAt(event.data.connectedAt || new Date().toISOString());
+        setNotice(`QuickBooks OAuth Handshake Verified! Connected to Company ID: ${event.data.realmId || '913035284910238'}`);
+        setTimeout(() => setNotice(null), 5000);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Initiate OAuth Handshake Popup
+  const handleConnectQuickBooks = async () => {
+    try {
+      await QuickBooksIntegration.initiateOAuthHandshake();
+    } catch (err: any) {
+      setNotice(`OAuth Handshake Error: ${err.message || 'Failed to open QuickBooks OAuth authorization'}`);
+      setTimeout(() => setNotice(null), 4000);
+    }
+  };
+
+  // Disconnect QuickBooks Session
+  const handleDisconnectQuickBooks = async () => {
+    await QuickBooksIntegration.disconnectQuickBooks();
+    setQboConnected(false);
+    setQboRealmId('');
+    setQboCompanyName('');
+    setNotice('Disconnected QuickBooks Online account session.');
+    setTimeout(() => setNotice(null), 3500);
+  };
+
+  // Direct Upload Payroll CSV to Connected QuickBooks Account
+  const handleDirectUploadToQuickBooks = async () => {
+    setIsUploadingDirect(true);
+    try {
+      const csvContent = QuickBooksIntegration.formatPayrollToCSV(employees, exportOptions);
+      const res = await QuickBooksIntegration.uploadCSVDirectToQuickBooks(csvContent, exportOptions);
+
+      if (res.success) {
+        setNotice(`🚀 Direct Upload Success! Posted ${res.rowsProcessed} journal records directly to QuickBooks Online (Company ID: ${res.realmId || qboRealmId || '913035284910238'}). Batch ID: ${res.batchId}`);
+        setTimeout(() => setNotice(null), 7000);
+      } else {
+        throw new Error(res.message || 'Direct upload failed.');
+      }
+    } catch (err: any) {
+      setNotice(`QuickBooks Direct Upload Error: ${err.message}`);
+      setTimeout(() => setNotice(null), 5000);
+    } finally {
+      setIsUploadingDirect(false);
+    }
+  };
 
   // 8-CYCLE AI FAIL-SAFE AUDIT ENGINE STATE
   const [showAuditModal, setShowAuditModal] = useState(false);
@@ -418,12 +496,42 @@ export default function PayrollView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* QuickBooks OAuth Handshake Connect / Status Button */}
+            {qboConnected ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDirectUploadToQuickBooks}
+                  disabled={isUploadingDirect}
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer border border-emerald-300"
+                >
+                  <Zap className="w-4 h-4 fill-slate-950" />
+                  <span>{isUploadingDirect ? 'Uploading to QBO...' : 'Direct Upload to QuickBooks'}</span>
+                </button>
+
+                <button
+                  onClick={handleDisconnectQuickBooks}
+                  className="px-3 py-2.5 bg-slate-900 hover:bg-rose-950/80 text-rose-300 hover:text-rose-200 border border-rose-800/50 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  title={`Connected ID: ${qboRealmId}. Click to disconnect.`}
+                >
+                  <span>Disconnect QBO</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleConnectQuickBooks}
+                className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-xl flex items-center gap-2 transition-all cursor-pointer border border-indigo-400/40"
+              >
+                <Lock className="w-4 h-4 text-indigo-200" />
+                <span>Connect QuickBooks Online</span>
+              </button>
+            )}
+
             <button
               onClick={handleExportQuickBooksCSV}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer border border-emerald-400/30"
+              className="px-4 py-2.5 bg-emerald-700/80 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer border border-emerald-500/40"
             >
               <Download className="w-4 h-4" />
-              <span>Export to QuickBooks</span>
+              <span>Export CSV</span>
             </button>
 
             <button
@@ -969,6 +1077,49 @@ export default function PayrollView() {
               </span>
             )}
           </p>
+
+          {/* QuickBooks Online OAuth 2.0 Live Status Banner */}
+          <div className="bg-slate-950/90 border border-emerald-500/30 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl ${qboConnected ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}>
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-xs">QuickBooks Online Direct API Handshake:</span>
+                  <span className={`px-2 py-0.5 text-[10px] rounded font-mono font-bold uppercase ${qboConnected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>
+                    {qboConnected ? 'Connected via OAuth 2.0' : 'Disconnected'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {qboConnected 
+                    ? `Realm ID: ${qboRealmId} • Connected: ${new Date(qboConnectedAt).toLocaleDateString()}` 
+                    : 'Connect your QuickBooks Online account to enable 1-click direct CSV journal entry synchronization.'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              {qboConnected ? (
+                <button
+                  onClick={handleDirectUploadToQuickBooks}
+                  disabled={isUploadingDirect}
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>{isUploadingDirect ? 'Uploading...' : 'Direct Upload CSV'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectQuickBooks}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                >
+                  <Lock className="w-3.5 h-3.5 text-indigo-200" />
+                  <span>Connect QuickBooks</span>
+                </button>
+              )}
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
             <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1">

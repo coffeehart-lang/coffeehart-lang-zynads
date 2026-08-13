@@ -367,6 +367,92 @@ export class QuickBooksIntegration {
   static generateJournalEntries(employees: Employee[], options: QuickBooksExportOptions) {
     return generateQuickBooksJournalEntries(employees, options);
   }
+
+  /**
+   * Initiates the QuickBooks Online OAuth 2.0 Handshake flow.
+   * Fetches authorization URL from backend server and launches authorization popup directly.
+   */
+  static async initiateOAuthHandshake(): Promise<Window | null> {
+    try {
+      const res = await fetch('/api/quickbooks/auth-url');
+      if (!res.ok) {
+        throw new Error('Failed to retrieve QuickBooks OAuth authorization URL.');
+      }
+      const data = await res.json();
+      if (data.url) {
+        const authWindow = window.open(
+          data.url,
+          'quickbooks_oauth_popup',
+          'width=600,height=720,scrollbars=yes,resizable=yes'
+        );
+        if (!authWindow) {
+          alert('Popup blocked! Please allow popups for this site to connect your QuickBooks Online account.');
+        }
+        return authWindow;
+      }
+      return null;
+    } catch (err) {
+      console.error("QuickBooks OAuth Handshake Error:", err);
+      throw err;
+    }
+  }
+
+  /**
+   * Checks current connection status with QuickBooks Online.
+   */
+  static async checkConnectionStatus() {
+    try {
+      const res = await fetch('/api/quickbooks/status');
+      if (!res.ok) return { connected: false };
+      const data = await res.json();
+      return data.status || { connected: false };
+    } catch {
+      return { connected: false };
+    }
+  }
+
+  /**
+   * Disconnects active QuickBooks Online session.
+   */
+  static async disconnectQuickBooks() {
+    try {
+      const res = await fetch('/api/quickbooks/disconnect', { method: 'POST' });
+      return await res.json();
+    } catch (err) {
+      console.error("Disconnect QuickBooks Error:", err);
+      return { success: false };
+    }
+  }
+
+  /**
+   * Uploads formatted payroll CSV directly to the connected QuickBooks Online account.
+   */
+  static async uploadCSVDirectToQuickBooks(csvContent: string, options: QuickBooksExportOptions) {
+    try {
+      const res = await fetch('/api/quickbooks/upload-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          csvContent,
+          companyName: options.companyName,
+          payPeriod: options.payPeriod,
+          payDate: options.payDate
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Direct QuickBooks upload failed.');
+      }
+
+      return await res.json();
+    } catch (err: any) {
+      console.error("QuickBooks Direct CSV Upload Error:", err);
+      throw err;
+    }
+  }
 }
 
 
