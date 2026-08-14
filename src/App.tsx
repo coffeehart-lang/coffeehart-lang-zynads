@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Menu, Megaphone, Zap } from 'lucide-react';
+import { Menu, Megaphone, Zap, Video, Sparkles, Film, FileSpreadsheet } from 'lucide-react';
 import { AdCampaign } from './types';
 import { INITIAL_CAMPAIGNS } from './data';
 import Sidebar from './components/Sidebar';
@@ -21,6 +21,7 @@ import AnalyticsView from './components/AnalyticsView';
 import TeleprompterView from './components/TeleprompterView';
 import BudgetCalculatorView from './components/BudgetCalculatorView';
 import PayrollView from './components/PayrollView';
+import ZenAdsVideoStudio from './components/ZenAdsVideoStudio';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal, { UserProfile } from './components/AuthModal';
 
@@ -173,53 +174,64 @@ export default function App() {
       {/* Main content body */}
       <main id="main-content-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 md:px-10">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Executive CFO Quick Navigation Ribbon */}
-          <div className="bg-slate-900/90 border border-emerald-500/30 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
+          {/* Suite Switcher & Quick Navigation Ribbon */}
+          <div className="bg-slate-900/95 border border-emerald-500/30 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl text-white shadow-md">
-                <Zap className="w-4 h-4 text-emerald-200" />
+              <div className="p-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 rounded-xl text-white shadow-md">
+                <Film className="w-4 h-4 text-emerald-200" />
               </div>
               <div>
                 <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider block">
-                  ZyncastCFO Executive Shortcuts
+                  ZenAds & Zyncast Dual-Suite Engine
                 </span>
                 <span className="text-xs font-extrabold text-slate-100">
-                  Quick Access to Financial Tools & Audits
+                  Switch between AI Video Commercial Studio & Executive CFO Tools
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setActiveTab('payroll')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'payroll'
-                    ? 'bg-emerald-500 text-slate-950 shadow-lg font-extrabold'
-                    : 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30'
+                onClick={() => setActiveTab('video-studio')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-md ${
+                  activeTab === 'video-studio'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 ring-2 ring-emerald-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40'
                 }`}
               >
-                <span>💳 Payroll & QuickBooks</span>
+                <Video className="w-3.5 h-3.5" />
+                <span>🎬 ZenAds Video Studio (Runway/Pika)</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('creatives')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'creatives'
+                    ? 'bg-purple-600 text-white shadow-lg'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Creative Studio</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('payroll')}
-                className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer border border-emerald-400/30"
-              >
-                <span>🤖 8-Cycle AI Audit</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('budget-calculator')}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'budget-calculator'
+                  activeTab === 'payroll'
                     ? 'bg-indigo-600 text-white shadow-lg'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
                 }`}
               >
-                <span>📈 Budget & Profit Engine</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />
+                <span>QuickBooks & Payroll</span>
               </button>
             </div>
           </div>
+
+          {activeTab === 'video-studio' && (
+            <ZenAdsVideoStudio />
+          )}
 
           {activeTab === 'dashboard' && (
             <DashboardView 
