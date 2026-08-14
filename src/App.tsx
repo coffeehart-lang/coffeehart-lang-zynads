@@ -8,8 +8,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Menu, Megaphone, Zap, Video, Sparkles, Film, FileSpreadsheet } from 'lucide-react';
-import { AdCampaign } from './types';
+import { Menu, Megaphone, Zap, Video, Sparkles, Film, FileSpreadsheet, Mic } from 'lucide-react';
+import { AdCampaign, SavedVoiceover } from './types';
 import { INITIAL_CAMPAIGNS } from './data';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
@@ -22,12 +22,67 @@ import TeleprompterView from './components/TeleprompterView';
 import BudgetCalculatorView from './components/BudgetCalculatorView';
 import PayrollView from './components/PayrollView';
 import ZenAdsVideoStudio from './components/ZenAdsVideoStudio';
+import Voiceovers from './components/Voiceovers';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal, { UserProfile } from './components/AuthModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
+  const [savedVoiceovers, setSavedVoiceovers] = useState<SavedVoiceover[]>(() => {
+    const saved = localStorage.getItem('zynads_saved_voiceovers');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved voiceovers:", e);
+      }
+    }
+    return [
+      {
+        id: 'vo_demo_1',
+        campaignId: 'camp-101',
+        campaignName: 'Summer SaaS Retargeting & Direct Sales',
+        title: 'High-Converting 15s Direct Response Hook',
+        scriptText: 'Stop wasting thousands on ads that fail to convert. ZenAds and Zyncast deploy multi-scene video commercials and automated ROAS tracking in under 60 seconds.',
+        voiceId: '21m00Tcm4TlvDq8ikWAM',
+        voiceName: 'Rachel',
+        model: 'eleven_multilingual_v2',
+        durationSec: 14,
+        settings: {
+          stability: 75,
+          similarityBoost: 85,
+          style: 15,
+          speakerBoost: true,
+          speed: 1.0
+        },
+        createdAt: new Date().toISOString(),
+        source: 'elevenlabs',
+        tags: ['American', 'Female', 'ElevenLabs']
+      },
+      {
+        id: 'vo_demo_2',
+        campaignId: 'camp-102',
+        campaignName: 'High-Intent Search Keyword Dominance',
+        title: 'Executive B2B Authority Pitch',
+        scriptText: 'Modern finance and marketing teams require real-time speed. Discover how industry leaders scale customer acquisition with verified 4.8x ROAS and zero manual friction.',
+        voiceId: 'pNInz6obpgDQGcFmaJgB',
+        voiceName: 'Adam',
+        model: 'eleven_multilingual_v2',
+        durationSec: 18,
+        settings: {
+          stability: 80,
+          similarityBoost: 90,
+          style: 10,
+          speakerBoost: true,
+          speed: 1.0
+        },
+        createdAt: new Date().toISOString(),
+        source: 'elevenlabs',
+        tags: ['American', 'Male', 'ElevenLabs']
+      }
+    ];
+  });
   const [isPrivacyMode, setIsPrivacyMode] = useState<boolean>(() => {
     return localStorage.getItem('zynads_privacy_mode') === 'true';
   });
@@ -116,6 +171,19 @@ export default function App() {
     saveCampaigns(updated);
   };
 
+  // Voiceover Handlers
+  const handleSaveVoiceover = (newVoiceover: SavedVoiceover) => {
+    const updated = [newVoiceover, ...savedVoiceovers.filter(v => v.id !== newVoiceover.id)];
+    setSavedVoiceovers(updated);
+    localStorage.setItem('zynads_saved_voiceovers', JSON.stringify(updated));
+  };
+
+  const handleDeleteVoiceover = (id: string) => {
+    const updated = savedVoiceovers.filter(v => v.id !== id);
+    setSavedVoiceovers(updated);
+    localStorage.setItem('zynads_saved_voiceovers', JSON.stringify(updated));
+  };
+
   return (
     <div id="app-root-container" className="flex flex-col md:flex-row h-screen w-screen bg-slate-50/60 overflow-hidden text-slate-800 font-sans">
       {/* Mobile Header */}
@@ -200,7 +268,19 @@ export default function App() {
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>🎬 ZenAds Video Studio (Runway/Pika)</span>
+                <span>🎬 Video Studio</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('voiceovers')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-md ${
+                  activeTab === 'voiceovers'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white ring-2 ring-indigo-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/40'
+                }`}
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>🎙️ ElevenLabs Voiceovers</span>
               </button>
 
               <button
@@ -231,6 +311,15 @@ export default function App() {
 
           {activeTab === 'video-studio' && (
             <ZenAdsVideoStudio />
+          )}
+
+          {activeTab === 'voiceovers' && (
+            <Voiceovers 
+              campaigns={campaigns}
+              savedVoiceovers={savedVoiceovers}
+              onSaveVoiceover={handleSaveVoiceover}
+              onDeleteVoiceover={handleDeleteVoiceover}
+            />
           )}
 
           {activeTab === 'dashboard' && (

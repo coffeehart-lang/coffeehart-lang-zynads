@@ -662,7 +662,233 @@ Respond with ONLY a strict JSON object with these exact keys:
     }
   });
 
+  // ElevenLabs Text-to-Speech & Voiceover Synthesis Endpoint
+  app.post("/api/elevenlabs/tts", async (req, res: any) => {
+    try {
+      const { 
+        text, 
+        voiceId = "21m00Tcm4TlvDq8ikWAM", // Rachel default
+        stability = 0.75, 
+        similarityBoost = 0.85, 
+        style = 0.0, 
+        speakerBoost = true,
+        modelId = "eleven_multilingual_v2"
+      } = req.body;
+
+      if (!text) {
+        return res.status(400).json({ error: "Text script is required for voiceover generation." });
+      }
+
+      const elevenApiKey = process.env.ELEVENLABS_API_KEY;
+
+      // 1. If ElevenLabs API Key is present in environment, call ElevenLabs v1 API
+      if (elevenApiKey && elevenApiKey.trim().length > 0) {
+        try {
+          const elevenRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+            method: "POST",
+            headers: {
+              "Accept": "audio/mpeg",
+              "Content-Type": "application/json",
+              "xi-api-key": elevenApiKey.trim()
+            },
+            body: JSON.stringify({
+              text,
+              model_id: modelId,
+              voice_settings: {
+                stability: Number(stability) || 0.75,
+                similarity_boost: Number(similarityBoost) || 0.85,
+                style: Number(style) || 0.0,
+                use_speaker_boost: Boolean(speakerBoost)
+              }
+            })
+          });
+
+          if (elevenRes.ok) {
+            const arrayBuffer = await elevenRes.arrayBuffer();
+            const base64Audio = Buffer.from(arrayBuffer).toString('base64');
+            return res.json({
+              success: true,
+              source: "elevenlabs",
+              audioBase64: base64Audio,
+              mimeType: "audio/mpeg",
+              voiceId,
+              message: "Generated ultra-realistic voiceover via ElevenLabs API."
+            });
+          } else {
+            const errorText = await elevenRes.text();
+            console.warn("[ElevenLabs API Warning]:", elevenRes.status, errorText.slice(0, 150));
+          }
+        } catch (e: any) {
+          console.warn("[ElevenLabs API Call Failed]:", e.message);
+        }
+      }
+
+      // 2. High-Fidelity Server-Side Gemini TTS Preview Fallback
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (geminiKey) {
+        try {
+          const ai = new GoogleGenAI({ apiKey: geminiKey });
+          // Map ElevenLabs voice styles to Gemini expressive voice configurations
+          const geminiVoiceMap: Record<string, string> = {
+            "21m00Tcm4TlvDq8ikWAM": "Kore", // Rachel
+            "pNInz6obpgDQGcFmaJgB": "Fenrir", // Adam
+            "yoZ06aMxZJJ28mfd3POQ": "Puck", // Sam
+            "ErXwobaYiN019PkySvjV": "Charon", // Antoni
+            "EXAVITQu4vr4xnSDxMaL": "Zephyr", // Bella
+            "ThT5KcBeYPX3keUQqHPh": "Kore", // Dorothy
+            "MF3mGyEYCl7XYWbV9V6O": "Fenrir", // Elli
+            "AZnzlk1XvdvUeBnXmlld": "Zephyr" // Domi
+          };
+          const selectedVoiceName = geminiVoiceMap[voiceId] || "Zephyr";
+
+          const response = await ai.models.generateContent({
+            model: "gemini-3.1-flash-tts-preview",
+            contents: [{ parts: [{ text }] }],
+            config: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: selectedVoiceName }
+                }
+              }
+            }
+          });
+
+          const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          if (base64Audio) {
+            return res.json({
+              success: true,
+              source: "gemini_tts",
+              audioBase64: base64Audio,
+              mimeType: "audio/mp3",
+              voiceId,
+              message: "Generated studio voiceover via Neural Flash TTS."
+            });
+          }
+        } catch (geminiErr: any) {
+          console.log("Gemini fallback info:", geminiErr?.message?.slice(0, 100));
+        }
+      }
+
+      // 3. Browser Speech Synthesis Fallback instruction
+      return res.json({
+        success: false,
+        source: "browser_speech",
+        message: "No remote API key configured or rate limit reached. Using browser natural speech synthesis engine."
+      });
+    } catch (err: any) {
+      console.error("ElevenLabs TTS Endpoint Error:", err);
+      res.status(500).json({ error: "Voiceover synthesis failed", message: err.message });
+    }
+  });
+
+  // Get ElevenLabs Voice Catalog Endpoint
+  app.get("/api/elevenlabs/voices", async (req, res: any) => {
+    try {
+      const elevenApiKey = process.env.ELEVENLABS_API_KEY;
+
+      if (elevenApiKey && elevenApiKey.trim().length > 0) {
+        try {
+          const elevenRes = await fetch("https://api.elevenlabs.io/v1/voices", {
+            headers: {
+              "xi-api-key": elevenApiKey.trim()
+            }
+          });
+
+          if (elevenRes.ok) {
+            const data = await elevenRes.json();
+            return res.json({
+              success: true,
+              source: "elevenlabs",
+              voices: data.voices
+            });
+          }
+        } catch (e: any) {
+          console.warn("Failed to fetch live ElevenLabs voices, using built-in catalog:", e.message);
+        }
+      }
+
+      // Standard Curated Voice Catalog
+      const curatedVoices = [
+        {
+          voice_id: "21m00Tcm4TlvDq8ikWAM",
+          name: "Rachel",
+          category: "premade",
+          labels: { accent: "American", gender: "Female", age: "Young", use_case: "Commercial & Social" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/21m00Tcm4TlvDq8ikWAM/rachel.mp3",
+          description: "Calm, warm, articulate, and confident for high-converting ads."
+        },
+        {
+          voice_id: "pNInz6obpgDQGcFmaJgB",
+          name: "Adam",
+          category: "premade",
+          labels: { accent: "American", gender: "Male", age: "Middle Aged", use_case: "Executive & Voiceover" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/pNInz6obpgDQGcFmaJgB/adam.mp3",
+          description: "Deep, resonant, authoritative corporate & broadcast tone."
+        },
+        {
+          voice_id: "EXAVITQu4vr4xnSDxMaL",
+          name: "Bella",
+          category: "premade",
+          labels: { accent: "American", gender: "Female", age: "Young", use_case: "Direct Response & Narration" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/EXAVITQu4vr4xnSDxMaL/bella.mp3",
+          description: "Dynamic, conversational, engaging UGC commercial voice."
+        },
+        {
+          voice_id: "ErXwobaYiN019PkySvjV",
+          name: "Antoni",
+          category: "premade",
+          labels: { accent: "American", gender: "Male", age: "Young", use_case: "High-Energy Promo & Ads" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/ErXwobaYiN019PkySvjV/antoni.mp3",
+          description: "Energetic, crisp, direct sales announcement specialist."
+        },
+        {
+          voice_id: "yoZ06aMxZJJ28mfd3POQ",
+          name: "Sam",
+          category: "premade",
+          labels: { accent: "American", gender: "Male", age: "Young", use_case: "Casual Dynamic UGC" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/yoZ06aMxZJJ28mfd3POQ/sam.mp3",
+          description: "Authentic, relatable creator tone for TikTok and Reels ads."
+        },
+        {
+          voice_id: "ThT5KcBeYPX3keUQqHPh",
+          name: "Dorothy",
+          category: "premade",
+          labels: { accent: "British", gender: "Female", age: "Young", use_case: "Luxury & Brand Story" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/ThT5KcBeYPX3keUQqHPh/dorothy.mp3",
+          description: "Sophisticated British RP accent for premium branding."
+        },
+        {
+          voice_id: "MF3mGyEYCl7XYWbV9V6O",
+          name: "Elli",
+          category: "premade",
+          labels: { accent: "American", gender: "Female", age: "Young", use_case: "Cheerful & Friendly" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/MF3mGyEYCl7XYWbV9V6O/elli.mp3",
+          description: "Bright, friendly, enthusiastic retail and SaaS promo."
+        },
+        {
+          voice_id: "VR6AewLTigWG4xSOukaG",
+          name: "Arnold",
+          category: "premade",
+          labels: { accent: "American", gender: "Male", age: "Middle Aged", use_case: "Cinema & Trailer" },
+          preview_url: "https://storage.googleapis.com/eleven-public-prod/previews/voices/VR6AewLTigWG4xSOukaG/arnold.mp3",
+          description: "Dramatic, intense trailer announcer voice."
+        }
+      ];
+
+      return res.json({
+        success: true,
+        source: "curated_catalog",
+        voices: curatedVoices
+      });
+    } catch (err: any) {
+      console.error("Voices Catalog Error:", err);
+      res.status(500).json({ error: "Failed to load voice catalog", message: err.message });
+    }
+  });
+
   // Gemini Text-to-Speech (TTS) Endpoint
+
   app.post("/api/tts", async (req, res: any) => {
     try {
       const key = process.env.GEMINI_API_KEY;

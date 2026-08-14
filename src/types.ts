@@ -69,3 +69,29 @@ export interface PerformanceDay {
   conversions: number;
   revenue: number;
 }
+
+export interface VoiceoverSettings {
+  stability: number; // 0 - 100
+  similarityBoost: number; // 0 - 100
+  style: number; // 0 - 100
+  speakerBoost: boolean;
+  speed: number; // 0.5 - 2.0
+}
+
+export interface SavedVoiceover {
+  id: string;
+  campaignId?: string;
+  campaignName?: string;
+  title: string;
+  scriptText: string;
+  voiceId: string;
+  voiceName: string;
+  model: string;
+  audioUrl?: string; // Base64 data URL or object URL
+  audioBlob?: Blob;
+  durationSec?: number;
+  settings: VoiceoverSettings;
+  createdAt: string;
+  source: 'elevenlabs' | 'gemini_tts' | 'browser_speech';
+  tags?: string[];
+}

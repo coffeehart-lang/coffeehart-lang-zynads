@@ -1,4 +1,4 @@
-import { LayoutDashboard, Sparkles, BarChart3, Eye, EyeOff, Zap, X, LogIn, Calculator, FileSpreadsheet, ShieldAlert, Vault, Scale, LineChart, PieChart, Video, Film, Megaphone, Radio, Tv } from 'lucide-react';
+import { LayoutDashboard, Sparkles, BarChart3, Eye, EyeOff, Zap, X, LogIn, Calculator, FileSpreadsheet, ShieldAlert, Vault, Scale, LineChart, PieChart, Video, Film, Megaphone, Radio, Tv, Mic } from 'lucide-react';
 import { UserProfile } from './AuthModal';
 
 interface SidebarProps {
@@ -102,6 +102,7 @@ export default function Sidebar({
           </span>
           {[
             { id: 'video-studio', label: 'AI Video Commercials', icon: Video, badge: 'RUNWAY/PIKA' },
+            { id: 'voiceovers', label: 'AI Voiceovers (ElevenLabs)', icon: Mic, badge: 'ELEVENLABS' },
             { id: 'creatives', label: 'Creative Assets & Video Studio', icon: Film, badge: 'KREA/AI' },
             { id: 'campaigns', label: 'Commercial Campaigns', icon: Megaphone },
             { id: 'teleprompter', label: 'Teleprompter & Script Recorder', icon: Radio },
