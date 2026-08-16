@@ -280,7 +280,7 @@ export default function App() {
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>🎙️ ElevenLabs Voiceovers</span>
+                <span>🎙️ AI Voiceover Studio</span>
               </button>
 
               <button

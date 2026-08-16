@@ -450,17 +450,17 @@ export default function Voiceovers({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-mono font-extrabold uppercase rounded-md shadow-sm">
-                ElevenLabs TTS Engine
+                AI Voice & Speech Studio
               </span>
               <span className="text-xs text-indigo-300 font-mono font-semibold">
-                ● Ultra-Realistic AI Voiceovers & Audio Narration
+                ● High-Fidelity Neural Speech & Commercial Narration
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2.5">
-              AI Voiceover Studio
+              AI Commercial Voiceover Studio
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              Generate broadcast-quality AI voiceovers for your ad campaigns and commercial video scripts with ElevenLabs, customize vocal stability and cadence, and save audio tracks directly into your project.
+              Generate commercial voiceovers for your ad campaigns and video scripts using the built-in neural speech engine, customize vocal stability and cadence, and save audio tracks directly into your project.
             </p>
           </div>
 
@@ -681,26 +681,26 @@ export default function Voiceovers({
                 className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer border border-indigo-400/30"
               >
                 <Zap className="w-4 h-4 text-indigo-200 fill-current" />
-                <span>{isGenerating ? 'Synthesizing Audio...' : 'Generate with ElevenLabs'}</span>
+                <span>{isGenerating ? 'Synthesizing Audio...' : 'Generate Studio Voiceover'}</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Right Column: ElevenLabs Voice Catalog & Voice Tuner (5 Cols) */}
+        {/* Right Column: AI Voice Catalog & Voice Tuner (5 Cols) */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* ElevenLabs Voice Selection Card */}
+          {/* AI Voice Selection Card */}
           <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-lg">
                   <Mic className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-extrabold text-white">Select ElevenLabs Voice</h3>
+                <h3 className="text-sm font-extrabold text-white">Select AI Voice Personality</h3>
               </div>
-              <span className="text-[10px] font-mono font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800 px-2 py-0.5 rounded">
-                ELEVEN v2
+              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
+                NEURAL TTS
               </span>
             </div>
 

@@ -102,7 +102,7 @@ export default function Sidebar({
           </span>
           {[
             { id: 'video-studio', label: 'AI Video Commercials', icon: Video, badge: 'RUNWAY/PIKA' },
-            { id: 'voiceovers', label: 'AI Voiceovers (ElevenLabs)', icon: Mic, badge: 'ELEVENLABS' },
+            { id: 'voiceovers', label: 'AI Voiceovers & Speech', icon: Mic, badge: 'STUDIO' },
             { id: 'creatives', label: 'Creative Assets & Video Studio', icon: Film, badge: 'KREA/AI' },
             { id: 'campaigns', label: 'Commercial Campaigns', icon: Megaphone },
             { id: 'teleprompter', label: 'Teleprompter & Script Recorder', icon: Radio },
