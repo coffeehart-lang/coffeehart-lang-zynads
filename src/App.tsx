@@ -13,6 +13,7 @@ import { AdCampaign, SavedVoiceover } from './types';
 import { INITIAL_CAMPAIGNS } from './data';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
+import ZencastLandingView from './components/ZencastLandingView';
 import CampaignsView from './components/CampaignsView';
 import CreativesView from './components/CreativesView';
 import AudiencesView from './components/AudiencesView';
@@ -330,9 +331,7 @@ export default function App() {
           )}
 
           {activeTab === 'dashboard' && (
-            <DashboardView 
-              campaigns={campaigns}
-              onToggleStatus={handleToggleStatus}
+            <ZencastLandingView 
               setActiveTab={setActiveTab}
               isPrivacyMode={isPrivacyMode}
             />
