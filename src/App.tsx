@@ -243,22 +243,41 @@ export default function App() {
       <main id="main-content-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 md:px-10">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Suite Switcher & Quick Navigation Ribbon */}
-          <div className="bg-slate-900/95 border border-emerald-500/30 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
+          <div className="bg-slate-900/95 border border-slate-800 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 rounded-xl text-white shadow-md">
-                <Film className="w-4 h-4 text-emerald-200" />
+              <div className="p-2 bg-gradient-to-r from-teal-500 via-emerald-500 to-indigo-600 rounded-xl text-slate-950 shadow-md font-black">
+                {activeTab.startsWith('video') || activeTab === 'voiceovers' || activeTab === 'creatives' || activeTab === 'campaigns' || activeTab === 'teleprompter' ? (
+                  <Film className="w-4 h-4 text-slate-950" />
+                ) : (
+                  <FileSpreadsheet className="w-4 h-4 text-slate-950" />
+                )}
               </div>
               <div>
-                <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider block">
-                  ZenAds & Zyncast Dual-Suite Engine
+                <span className="text-[10px] font-mono font-bold text-teal-400 uppercase tracking-wider block">
+                  {activeTab.startsWith('video') || activeTab === 'voiceovers' || activeTab === 'creatives' || activeTab === 'campaigns' || activeTab === 'teleprompter'
+                    ? 'ZenAds Commercial & Marketing Hub'
+                    : 'ZyncastCFO Executive Command Center'}
                 </span>
                 <span className="text-xs font-extrabold text-slate-100">
-                  Switch between AI Video Commercial Studio & Executive CFO Tools
+                  {activeTab.startsWith('video') || activeTab === 'voiceovers' || activeTab === 'creatives' || activeTab === 'campaigns' || activeTab === 'teleprompter'
+                    ? 'AI Video Commercials, Neural Speech Voiceovers & Creative Asset Studio'
+                    : 'Executive Financial Dashboard, 8-Cycle AI Payroll & QuickBooks Integration'}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-md ${
+                  activeTab === 'dashboard'
+                    ? 'bg-teal-500 text-slate-950 ring-2 ring-teal-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/40'
+                }`}
+              >
+                <span>📊 Zyncast CFO Hub</span>
+              </button>
+
               <button
                 onClick={() => setActiveTab('video-studio')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 shadow-md ${
@@ -268,7 +287,7 @@ export default function App() {
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>🎬 Video Studio</span>
+                <span>🎬 ZenAds Video</span>
               </button>
 
               <button
@@ -280,31 +299,19 @@ export default function App() {
                 }`}
               >
                 <Mic className="w-3.5 h-3.5" />
-                <span>🎙️ AI Voiceover Studio</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('creatives')}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'creatives'
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                <span>Creative Studio</span>
+                <span>🎙️ Voiceovers</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('payroll')}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'payroll'
-                    ? 'bg-indigo-600 text-white shadow-lg'
+                    ? 'bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-300'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400" />
-                <span>QuickBooks & Payroll</span>
+                <span>Payroll & QB</span>
               </button>
             </div>
           </div>

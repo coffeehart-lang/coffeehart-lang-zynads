@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AdCampaign, PerformanceDay } from '../types';
 import { PERFORMANCE_HISTORY } from '../data';
-import { DollarSign, TrendingUp, Eye, MousePointer, Target, Megaphone, ArrowUpRight, Play, Pause, Plus, Sparkles } from 'lucide-react';
+import { DollarSign, TrendingUp, Eye, MousePointer, Target, Megaphone, ArrowUpRight, Play, Pause, Plus, Sparkles, Video, Mic, Film, Tv, Zap, Vault, ArrowRight } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface DashboardViewProps {
@@ -42,6 +42,96 @@ export default function DashboardView({
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {/* 🚀 ZENADS COMMERCIAL & MARKETING STUDIO GATEWAY BANNER */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-3xl border border-indigo-500/30 text-white shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-500/20 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 bg-gradient-to-r from-emerald-500 to-indigo-500 text-white text-[10px] font-mono font-extrabold uppercase rounded shadow-sm">
+                ZenAds Marketing Suite
+              </span>
+              <span className="text-xs text-indigo-300 font-mono font-semibold">
+                ● Video Commercials & Neural Voiceovers
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              Launch ZenAds Commercial & Creative Studio
+            </h2>
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Create 4-scene video commercials with RunwayML & Pika timeline cues, synthesize high-converting voiceovers, generate creative image assets, and scale campaign ROAS.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => setActiveTab('video-studio')}
+              className="px-5 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5"
+            >
+              <Video className="w-4 h-4 text-slate-950" />
+              <span>Open Video Studio &rarr;</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('voiceovers')}
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white font-bold text-xs rounded-2xl border border-indigo-500/40 shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Voiceovers</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 4 Quick Link Tiles to ZenAds */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button
+            onClick={() => setActiveTab('video-studio')}
+            className="p-3.5 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-emerald-400/50"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">1. AI Video Studio</span>
+              <Video className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors mt-1">Multi-Scene Timeline</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">Viral 0-3s hooks, 1080p rendering & MP4 exports</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('voiceovers')}
+            className="p-3.5 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-indigo-400/50"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase">2. Voiceover Studio</span>
+              <Mic className="w-3.5 h-3.5 text-indigo-400" />
+            </div>
+            <div className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors mt-1">AI Speech Narration</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">Neural voices, pitch tuner & audio monitor</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('creatives')}
+            className="p-3.5 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-purple-400/50"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-purple-400 uppercase">3. Creative Assets</span>
+              <Film className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+            <div className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors mt-1">Image & Ad Banners</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">High-CTR graphics for TikTok, Meta & Google</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('campaigns')}
+            className="p-3.5 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-teal-400/50"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-teal-400 uppercase">4. Commercial Campaigns</span>
+              <Megaphone className="w-3.5 h-3.5 text-teal-400" />
+            </div>
+            <div className="text-xs font-bold text-white group-hover:text-teal-300 transition-colors mt-1">Deploy Ad Spend</div>
+            <p className="text-[10px] text-slate-400 mt-0.5">Cross-channel distribution & ROAS tracking</p>
+          </button>
+        </div>
+      </div>
+
       {/* ZyncastCFO Executive Financial & Payroll Hub */}
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-6 rounded-3xl border border-emerald-500/40 text-white shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
