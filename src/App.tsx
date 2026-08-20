@@ -241,8 +241,9 @@ export default function App() {
       {isSidebarOpen && (
         <div 
           id="mobile-sidebar-backdrop"
-          className="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 transition-opacity duration-300 cursor-pointer"
+          className="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] transition-opacity duration-300 cursor-pointer"
           onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -250,7 +251,7 @@ export default function App() {
       <div 
         id="sidebar-wrapper"
         className={`
-          fixed inset-y-0 left-0 z-50 h-full max-h-full transform md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex
+          fixed inset-y-0 left-0 z-[70] h-full max-h-full transform md:relative md:z-30 md:translate-x-0 transition-transform duration-300 ease-in-out flex shadow-2xl md:shadow-none
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
