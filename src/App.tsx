@@ -7,7 +7,7 @@
  * Contact: coffeehart@gmail.com
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Menu, Megaphone, Zap, Video, Sparkles, Film, FileSpreadsheet, Mic, LineChart, Sliders, Flame, Bot, Scale, BarChart3, Radio } from 'lucide-react';
 import { AdCampaign, SavedVoiceover } from './types';
 import { INITIAL_CAMPAIGNS } from './data';
@@ -189,10 +189,68 @@ export default function App() {
     localStorage.setItem('zynads_saved_voiceovers', JSON.stringify(updated));
   };
 
+  // Touch Swipe Gesture State & Handlers for Mobile Navigation
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now()
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+
+    const startX = touchStartRef.current.x;
+    const startY = touchStartRef.current.y;
+    const startTime = touchStartRef.current.time;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const duration = Date.now() - startTime;
+
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+
+    // Reset touch start
+    touchStartRef.current = null;
+
+    // Only recognize horizontal swipes (must be predominantly horizontal and quick or substantial)
+    const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY) * 1.3;
+    const isSufficientDistance = Math.abs(deltaX) > 45;
+    const isQuickGesture = duration < 450 && Math.abs(deltaX) > 30;
+
+    if (isHorizontalSwipe && (isSufficientDistance || isQuickGesture)) {
+      // Swipe Right (deltaX > 0): Open sidebar if swipe originates from left side (< 80px) or on header
+      if (deltaX > 0 && !isSidebarOpen) {
+        if (startX < 85 || (e.currentTarget as HTMLElement).id === 'mobile-header') {
+          setIsSidebarOpen(true);
+        }
+      }
+      // Swipe Left (deltaX < 0): Close sidebar if open
+      else if (deltaX < 0 && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+    }
+  };
+
   return (
-    <div id="app-root-container" className="flex flex-col md:flex-row h-screen w-screen bg-slate-50/60 overflow-hidden text-slate-800 font-sans">
+    <div 
+      id="app-root-container" 
+      className="flex flex-col md:flex-row h-screen w-screen bg-slate-50/60 overflow-hidden text-slate-800 font-sans"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Mobile Top App Bar */}
-      <header id="mobile-header" className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-950 text-white border-b border-slate-800 shrink-0 z-40">
+      <header 
+        id="mobile-header" 
+        className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-950 text-white border-b border-slate-800 shrink-0 z-40 touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div id="mobile-brand-wrapper" className="flex items-center gap-2.5">
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -243,6 +301,10 @@ export default function App() {
           id="mobile-sidebar-backdrop"
           className="md:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] transition-opacity duration-300 cursor-pointer"
           onClick={() => setIsSidebarOpen(false)}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            setIsSidebarOpen(false);
+          }}
           aria-hidden="true"
         />
       )}
@@ -254,6 +316,8 @@ export default function App() {
           fixed inset-y-0 left-0 z-[70] h-full max-h-full transform md:relative md:z-30 md:translate-x-0 transition-transform duration-300 ease-in-out flex shadow-2xl md:shadow-none
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <Sidebar 
           activeTab={activeTab} 
@@ -272,7 +336,12 @@ export default function App() {
       </div>
 
       {/* Main content body */}
-      <main id="main-content-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 md:px-10">
+      <main 
+        id="main-content-scroll" 
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 md:px-10 touch-pan-y"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Suite Switcher & Quick Navigation Ribbon */}
           <div className="bg-slate-900/95 border border-slate-800 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 text-white">
