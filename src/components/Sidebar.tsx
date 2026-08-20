@@ -1,4 +1,29 @@
-import { LayoutDashboard, Sparkles, BarChart3, Eye, EyeOff, Zap, X, LogIn, Calculator, FileSpreadsheet, ShieldAlert, Vault, Scale, LineChart, PieChart, Video, Film, Megaphone, Radio, Tv, Mic } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Sparkles, 
+  BarChart3, 
+  Eye, 
+  EyeOff, 
+  Zap, 
+  X, 
+  LogIn, 
+  Calculator, 
+  FileSpreadsheet, 
+  ShieldAlert, 
+  Vault, 
+  Scale, 
+  LineChart, 
+  PieChart, 
+  Video, 
+  Film, 
+  Megaphone, 
+  Radio, 
+  Tv, 
+  Mic,
+  Sliders,
+  Flame,
+  Bot
+} from 'lucide-react';
 import { UserProfile } from './AuthModal';
 
 interface SidebarProps {
@@ -17,7 +42,7 @@ export default function Sidebar({
   activeTab, 
   setActiveTab, 
   isPrivacyMode, 
-  setIsPrivacyMode,
+  setIsPrivacyMode, 
   userTier,
   onOpenCheckout,
   currentUser,
@@ -25,7 +50,7 @@ export default function Sidebar({
   onClose
 }: SidebarProps) {
   return (
-    <aside id="sidebar-container" className="w-64 bg-slate-950 text-slate-100 flex flex-col h-full border-r border-slate-800 shrink-0 overflow-y-auto font-sans">
+    <aside id="sidebar-container" className="w-72 bg-slate-950 text-slate-100 flex flex-col h-full border-r border-slate-800 shrink-0 overflow-y-auto font-sans shadow-2xl">
       {/* Brand Header */}
       <div id="brand-header" className="p-5 border-b border-slate-900 space-y-3">
         <div className="flex items-center justify-between">
@@ -44,7 +69,7 @@ export default function Sidebar({
           {onClose && (
             <button 
               onClick={onClose} 
-              className="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-slate-900 rounded-md transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
@@ -69,7 +94,7 @@ export default function Sidebar({
         {userTier === 'pro' ? (
           <div className="space-y-1">
             <span className="text-xs text-emerald-300 font-medium flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-emerald-400 fill-current" /> Unlimited Video Generates & QB Sync
+              <Zap className="w-3 h-3 text-emerald-400 fill-current" /> Unlimited Pro Video & GL Sync Active
             </span>
             <button
               onClick={onOpenCheckout}
@@ -81,7 +106,7 @@ export default function Sidebar({
         ) : (
           <div className="space-y-1.5">
             <span className="text-[11px] text-slate-400 leading-tight block">
-              RunwayML, Pika, Synthesia & AI Audits ready.
+              Multi-Model AI, QBO Sync & Runway Engine.
             </span>
             <button
               onClick={onOpenCheckout}
@@ -94,17 +119,20 @@ export default function Sidebar({
       </div>
 
       {/* Navigation matching ZyncastCFO & ZenAds layout */}
-      <nav id="sidebar-navigation" className="flex-1 px-4 py-4 space-y-6">
-        {/* SECTION 1: ZYNCAST CFO FINANCIAL ENGINE (PRIMARY LANDING) */}
+      <nav id="sidebar-navigation" className="flex-1 px-4 py-4 space-y-5">
+        {/* SECTION 1: ZYNCAST CFO EXECUTIVE FINANCIAL SUITE */}
         <div className="space-y-1">
           <span className="px-3 text-[10px] font-bold text-teal-400 uppercase tracking-widest block mb-2 font-mono flex items-center gap-1">
-            <Vault className="w-3 h-3 text-teal-400" /> ZYNCAST CFO SUITE
+            <Vault className="w-3 h-3 text-teal-400" /> ZYNCAST CFO CORE TOOLS
           </span>
           {[
-            { id: 'dashboard', label: 'CFO Executive Dashboard', icon: LayoutDashboard },
-            { id: 'payroll', label: 'Payroll & QuickBooks Sync', icon: FileSpreadsheet, badge: '8-CYCLE AI' },
-            { id: 'budget-calculator', label: 'Forecast & Profit Margins', icon: Calculator },
-            { id: 'ai-optimizer', label: 'AI CFO & Ad Advisor', icon: Sparkles },
+            { id: 'dashboard', label: 'Executive Metrics Dashboard', icon: LayoutDashboard, badge: 'CFO' },
+            { id: 'cash-flow-forecaster', label: 'Cash Flow Forecaster', icon: LineChart, badge: 'PROJECTION' },
+            { id: 'scenario-modeler', label: '"What-If" Scenario Modeler', icon: Sliders, badge: 'SIMULATE' },
+            { id: 'payroll', label: 'Bookkeeping & Ledger Sync', icon: FileSpreadsheet, badge: 'QBO SYNC' },
+            { id: 'runway-tracker', label: 'Burn Rate & Runway Tracker', icon: Flame, badge: 'SOLVENCY' },
+            { id: 'ai-financial-analyst', label: 'AI Financial Analyst', icon: Bot, badge: 'MULTI-MODEL' },
+            { id: 'budget-calculator', label: 'Business Screener & Margins', icon: Calculator },
             { id: 'analytics', label: 'Financial & Tax Reports', icon: BarChart3 },
           ].map((item) => {
             const Icon = item.icon;
@@ -117,13 +145,13 @@ export default function Sidebar({
                   setActiveTab(item.id);
                   if (onClose) onClose();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-teal-500/20 text-teal-300 border-l-4 border-teal-400 pl-3.5 font-semibold'
+                    ? 'bg-teal-500/20 text-teal-300 border-l-4 border-teal-400 pl-3 font-semibold'
                     : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-teal-400' : 'text-slate-400'}`} />
                   <span className="truncate">{item.label}</span>
                 </div>
@@ -148,6 +176,7 @@ export default function Sidebar({
             { id: 'creatives', label: 'Creative Assets & Studio', icon: Film, badge: 'KREA/AI' },
             { id: 'campaigns', label: 'Commercial Campaigns', icon: Megaphone },
             { id: 'teleprompter', label: 'Teleprompter & Script Recorder', icon: Radio },
+            { id: 'ai-optimizer', label: 'AI Ad Copy Generator', icon: Sparkles },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -159,60 +188,18 @@ export default function Sidebar({
                   setActiveTab(item.id);
                   if (onClose) onClose();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-emerald-500/20 text-emerald-300 border-l-4 border-emerald-400 pl-3.5 font-semibold'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-l-4 border-emerald-400 pl-3 font-semibold'
                     : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge && (
                   <span className="text-[9px] font-mono font-extrabold bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded shrink-0">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* SECTION 2: OPERATOR SIDE TOOLS */}
-        <div className="space-y-1 pt-2 border-t border-slate-900">
-          <span className="px-3 text-[10px] font-bold text-amber-500/90 uppercase tracking-widest block mb-2 font-mono flex items-center gap-1">
-            OPERATOR SIDE TOOLS
-          </span>
-          {[
-            { id: 'payroll', label: 'Quick Tax & Payroll Audit', icon: ShieldAlert, badge: 'AI AUDIT' },
-            { id: 'payroll', label: 'Cash Vault & Denominations', icon: Vault, badge: 'CASH ONLY' },
-            { id: 'budget-calculator', label: 'Margin & Markup', icon: Scale },
-            { id: 'budget-calculator', label: 'Cash Flow Runway', icon: LineChart },
-            { id: 'analytics', label: 'Expense Ratio Check', icon: PieChart },
-          ].map((item, idx) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={`${item.id}-${idx}`}
-                id={`sidebar-operator-link-${idx}`}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  if (onClose) onClose();
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-slate-900 text-white font-semibold'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {item.badge && (
-                  <span className="text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded shrink-0">
                     {item.badge}
                   </span>
                 )}
@@ -278,4 +265,3 @@ export default function Sidebar({
     </aside>
   );
 }
-

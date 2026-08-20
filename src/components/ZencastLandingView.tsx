@@ -1,119 +1,124 @@
 import { useState } from 'react';
 import { 
-  DollarSign, 
   TrendingUp, 
+  DollarSign, 
+  ShieldCheck, 
   Vault, 
   FileSpreadsheet, 
-  Calculator, 
-  BarChart3, 
-  ShieldCheck, 
-  Sparkles, 
   ArrowUpRight, 
-  Building2, 
-  Cpu, 
-  Banknote, 
-  Clock, 
+  Scale, 
+  Download, 
+  LineChart, 
+  BarChart3, 
+  Sliders, 
+  Flame, 
+  Bot, 
+  Sparkles, 
   CheckCircle2, 
-  ArrowRight, 
-  RefreshCw, 
-  PieChart as PieIcon, 
-  Briefcase,
+  Calendar,
   Layers,
-  Scale,
-  ShieldAlert
+  ArrowRight
 } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
-interface ZencastLandingProps {
+interface ZencastLandingViewProps {
   setActiveTab: (tab: string) => void;
   isPrivacyMode: boolean;
 }
 
-// Executive Cash Flow & Financial Model Data for Zencast CFO
 const FINANCIAL_TELEMETRY = [
-  { month: 'Mar', revenue: 142000, cogs: 52000, payroll: 41000, netProfit: 49000, ebitda: 58000, cashVault: 185000 },
-  { month: 'Apr', revenue: 168000, cogs: 59000, payroll: 44000, netProfit: 65000, ebitda: 74000, cashVault: 220000 },
-  { month: 'May', revenue: 195000, cogs: 66000, payroll: 48000, netProfit: 81000, ebitda: 92000, cashVault: 275000 },
-  { month: 'Jun', revenue: 218000, cogs: 72000, payroll: 51000, netProfit: 95000, ebitda: 108000, cashVault: 330000 },
-  { month: 'Jul', revenue: 254000, cogs: 81000, payroll: 55000, netProfit: 118000, ebitda: 132000, cashVault: 410000 },
-  { month: 'Aug', revenue: 289000, cogs: 89000, payroll: 58000, netProfit: 142000, ebitda: 159000, cashVault: 495000 },
+  { month: 'Oct', revenue: 215000, cogs: 68000, payroll: 52000, netProfit: 95000, cashVault: 320000 },
+  { month: 'Nov', revenue: 242000, cogs: 74000, payroll: 54000, netProfit: 114000, cashVault: 380000 },
+  { month: 'Dec', revenue: 268000, cogs: 82000, payroll: 56000, netProfit: 130000, cashVault: 435000 },
+  { month: 'Jan', revenue: 275000, cogs: 85000, payroll: 58000, netProfit: 132000, cashVault: 460000 },
+  { month: 'Feb', revenue: 289000, cogs: 89000, payroll: 58000, netProfit: 142000, cashVault: 495000 },
+  { month: 'Mar (Proj)', revenue: 310000, cogs: 94000, payroll: 62000, netProfit: 154000, cashVault: 550000 },
 ];
 
 const RECENT_GL_TRANSACTIONS = [
-  { id: 'GL-9821', date: 'Aug 16, 2026', account: 'Payroll Clearing Acct (6100)', memo: 'Bi-Weekly Payroll Cycle Run #16', debit: '$29,480.00', credit: '-', status: 'Synced QBO' },
-  { id: 'GL-9820', date: 'Aug 15, 2026', account: 'Vault Cash On Hand (1010)', memo: '280E Physical Vault Safe Deposit', debit: '-', credit: '$14,200.00', status: 'Audited' },
-  { id: 'GL-9819', date: 'Aug 14, 2026', account: 'Operating Revenue (4000)', memo: 'B2B Client Retainers & Software Invoices', debit: '$48,500.00', credit: '-', status: 'Synced QBO' },
-  { id: 'GL-9818', date: 'Aug 13, 2026', account: 'FICA / Tax Liability (2100)', memo: 'Federal & State Payroll Withholdings', debit: '-', credit: '$8,140.00', status: 'AI Sealed' },
-  { id: 'GL-9817', date: 'Aug 12, 2026', account: 'Cost of Goods Sold (5000)', memo: 'Merchant COGS & Inventory Restock', debit: '-', credit: '$18,900.00', status: 'Synced QBO' },
+  { id: 'GL-9821', date: '2026-03-28', account: 'Payroll Expense #6010', memo: 'Bi-Weekly Direct Deposit Net Wages (8 Employees)', debit: '$29,480.00', credit: '-', status: 'Synced QBO' },
+  { id: 'GL-9822', date: '2026-03-28', account: 'Fed Tax Withholding #2100', memo: 'Form 941 Employer FICA & Withholdings (IRS Wire)', debit: '$8,420.50', credit: '-', status: 'Synced QBO' },
+  { id: 'GL-9823', date: '2026-03-27', account: 'Dispensary Vault Cash #1020', memo: 'Physical Vault 280E Verified Cash Bag Seal #094', debit: '$48,500.00', credit: '-', status: 'AI Sealed' },
+  { id: 'GL-9824', date: '2026-03-27', account: 'SaaS Inflow Stripe #4010', memo: 'Enterprise Annual Subscription Plan Batch #88', debit: '-', credit: '$38,900.00', status: 'Synced QBO' },
+  { id: 'GL-9825', date: '2026-03-26', account: 'Hardware CapEx #1510', memo: 'Dual-Audit Vault Drop Safe Capital Asset', debit: '$12,400.00', credit: '-', status: 'Audit Ready' },
 ];
 
-export default function ZencastLandingView({
-  setActiveTab,
-  isPrivacyMode
-}: ZencastLandingProps) {
+export default function ZencastLandingView({ setActiveTab, isPrivacyMode }: ZencastLandingViewProps) {
   const [timeRange, setTimeRange] = useState<'6m' | '1y' | 'YTD'>('6m');
 
-  const formatCurrency = (val: number) => {
+  const formatCurrency = (amount: number) => {
     if (isPrivacyMode) return '••••••';
-    return `$${val.toLocaleString()}`;
+    return `$${amount.toLocaleString()}`;
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 🏛️ ZENCAST CFO EXECUTIVE COMMAND HERO */}
-      <div className="bg-gradient-to-r from-slate-950 via-teal-950/80 to-slate-950 p-6 sm:p-8 rounded-3xl border border-teal-500/30 text-white shadow-2xl space-y-6 relative overflow-hidden">
-        {/* Glow Accent */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-        
+    <div className="space-y-6 animate-fadeIn font-sans">
+      {/* 🏛️ EXECUTIVE HERO SECTION */}
+      <div className="bg-gradient-to-r from-slate-950 via-teal-950 to-slate-950 p-6 sm:p-8 rounded-3xl border border-teal-500/30 text-white shadow-2xl space-y-6 relative overflow-hidden">
+        {/* Subtle glow accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-teal-500/20 pb-6 relative z-10">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 text-[10px] font-mono font-extrabold uppercase rounded-full shadow-md">
-                ZENCAST CFO EXECUTIVE SUITE
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 bg-teal-500 text-slate-950 text-[10px] font-mono font-black uppercase rounded shadow-sm">
+                EXECUTIVE CFO ENGINE
               </span>
-              <span className="text-xs text-teal-300 font-mono font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                QuickBooks Online & 8-Cycle AI Audit Live
+              <span className="text-xs text-teal-300 font-mono font-semibold">
+                ● Live General Ledger & Multi-Model Intelligence
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-              Executive Financial Command & AI Payroll Engine
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+              Zencast<span className="text-teal-400">CFO</span> Executive Headquarters
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Complete CFO operating ecosystem: automated W-2 & 1099 payroll calculations, 8-Cycle AI cryptographic audit verification, physical cash vault balancing (280E dispensary compliant), and seamless double-entry general ledger syncing with QuickBooks Online.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
+              The unified financial cockpit: Cash Flow Forecaster, "What-If" Scenario Modeler, Bookkeeping & QuickBooks Sync, Burn Rate Tracker, and Multi-Model AI Financial Analyst.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
-              onClick={() => setActiveTab('payroll')}
-              className="px-6 py-3.5 bg-gradient-to-r from-teal-400 via-emerald-400 to-teal-500 hover:from-teal-300 hover:to-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-teal-500/20 flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5"
+              onClick={() => setActiveTab('cash-flow-forecaster')}
+              className="px-4 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-slate-950 font-black" />
-              <span>Launch Payroll & QuickBooks Sync &rarr;</span>
+              <LineChart className="w-4 h-4" />
+              <span>Cash Flow Forecaster</span>
             </button>
+
             <button
-              onClick={() => setActiveTab('budget-calculator')}
-              className="px-5 py-3.5 bg-slate-900/90 hover:bg-slate-800 text-teal-300 hover:text-white font-bold text-xs rounded-2xl border border-teal-500/40 shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+              onClick={() => setActiveTab('ai-financial-analyst')}
+              className="px-4 py-2.5 bg-slate-900/90 hover:bg-slate-800 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
-              <Calculator className="w-4 h-4 text-teal-400" />
-              <span>Financial Forecast & Margins</span>
+              <Bot className="w-4 h-4 text-teal-400" />
+              <span>AI Financial Analyst</span>
             </button>
           </div>
         </div>
 
-        {/* 4 Core Pillars of Zencast CFO */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+        {/* 6 Executive Suite Core Tools */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 relative z-10">
           <button
-            onClick={() => setActiveTab('payroll')}
+            onClick={() => setActiveTab('cash-flow-forecaster')}
             className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-teal-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-teal-400/60 shadow-lg"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-teal-400 uppercase">1. Payroll & W-2 / 1099s</span>
-              <FileSpreadsheet className="w-4 h-4 text-teal-400" />
+              <span className="text-[10px] font-mono font-bold text-teal-400 uppercase">1. Cash Flow Forecaster</span>
+              <LineChart className="w-4 h-4 text-teal-400" />
             </div>
-            <div className="text-sm font-bold text-white group-hover:text-teal-300 transition-colors mt-1.5">Employee Wage Engine</div>
-            <p className="text-xs text-slate-400 mt-1">Bi-weekly runs, automated tax withholdings, and direct deposit routing.</p>
+            <div className="text-sm font-bold text-white group-hover:text-teal-300 transition-colors mt-1.5">Projection & Vault Engine</div>
+            <p className="text-xs text-slate-400 mt-1">Multi-horizon dynamic inflow/outflow projections over 6, 12, or 24-month timelines.</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('scenario-modeler')}
+            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-indigo-400/60 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase">2. "What-If" Modeler</span>
+              <Sliders className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors mt-1.5">Decision Simulation</div>
+            <p className="text-xs text-slate-400 mt-1">Stress-test hiring new staff, capital expenditures, and price shifts before committing.</p>
           </button>
 
           <button
@@ -121,35 +126,47 @@ export default function ZencastLandingView({
             className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-emerald-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-emerald-400/60 shadow-lg"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">2. 8-Cycle AI Audit</span>
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase">3. Bookkeeping & Ledger Sync</span>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors mt-1.5">Cryptographic Zero-Error</div>
-            <p className="text-xs text-slate-400 mt-1">Gemini-backed 8-stage audit certifying tax, math, and compliance accuracy.</p>
+            <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors mt-1.5">QuickBooks & Payroll Engine</div>
+            <p className="text-xs text-slate-400 mt-1">Automated payroll, tax withholding journals, and 8-cycle cryptographic audits.</p>
           </button>
 
           <button
-            onClick={() => setActiveTab('payroll')}
-            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-amber-400/60 shadow-lg"
+            onClick={() => setActiveTab('runway-tracker')}
+            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-rose-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-rose-400/60 shadow-lg"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-amber-400 uppercase">3. Cash-Only Vault Mode</span>
-              <Vault className="w-4 h-4 text-amber-400" />
+              <span className="text-[10px] font-mono font-bold text-rose-400 uppercase">4. Burn Rate & Runway</span>
+              <Flame className="w-4 h-4 text-rose-400" />
             </div>
-            <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors mt-1.5">280E Safe & Denominations</div>
-            <p className="text-xs text-slate-400 mt-1">Exact $100, $50, $20 breakdown with automated tamper-proof envelope logs.</p>
+            <div className="text-sm font-bold text-white group-hover:text-rose-300 transition-colors mt-1.5">Capital Solvency Tracker</div>
+            <p className="text-xs text-slate-400 mt-1">Surveillance of gross/net burn rates with 24-month stress-test survival curves.</p>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ai-financial-analyst')}
+            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-cyan-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-cyan-400/60 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase">5. AI Financial Analyst</span>
+              <Bot className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors mt-1.5">Multi-Model Intelligence</div>
+            <p className="text-xs text-slate-400 mt-1">Surfaces margin anomalies, drafts board briefings, and audits GL transactions.</p>
           </button>
 
           <button
             onClick={() => setActiveTab('budget-calculator')}
-            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-indigo-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-indigo-400/60 shadow-lg"
+            className="p-4 bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/30 rounded-2xl text-left transition-all cursor-pointer group hover:border-amber-400/60 shadow-lg"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase">4. Profit & Stock Models</span>
-              <Calculator className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px] font-mono font-bold text-amber-400 uppercase">6. Margin & Screener</span>
+              <Scale className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors mt-1.5">Business & Market Screener</div>
-            <p className="text-xs text-slate-400 mt-1">Simulate margins, runway burn rate, and institutional asset growth.</p>
+            <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors mt-1.5">Business & Unit Economics</div>
+            <p className="text-xs text-slate-400 mt-1">Calculates gross margin, cost per unit, markup pricing, and stock screening.</p>
           </button>
         </div>
       </div>
