@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase auth UID" },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "companyName": { "type": "string", "maxLength": 100 },
+        "tier": { "type": "string", "enum": ["free", "pro"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "campaign": {
+      "title": "Campaign",
+      "description": "Ad campaign performance and configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "objective": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["Active", "Paused", "Draft", "Completed"] },
+        "budget": { "type": "number" },
+        "spent": { "type": "number" },
+        "impressions": { "type": "number" },
+        "clicks": { "type": "number" },
+        "ctr": { "type": "number" },
+        "platform": { "type": "string", "maxLength": 50 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "userId"]
+    },
+    "creative": {
+      "title": "Creative",
+      "description": "Ad creative asset and generated copies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "maxLength": 50 },
+        "mediaUrl": { "type": "string", "maxLength": 1000 },
+        "copyText": { "type": "string", "maxLength": 2000 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "userId"]
+    },
+    "project": {
+      "title": "Project",
+      "description": "Video generation or studio project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "prompt": { "type": "string", "maxLength": 2000 },
+        "videoUrl": { "type": "string", "maxLength": 1000 },
+        "aspectRatio": { "type": "string", "maxLength": 10 },
+        "modelName": { "type": "string", "maxLength": 50 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "User profile document"
+    },
+    "/users/{userId}/campaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/campaign" },
+      "description": "User ad campaigns"
+    },
+    "/users/{userId}/creatives/{creativeId}": {
+      "schema": { "$ref": "#/entities/creative" },
+      "description": "User creative assets"
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/project" },
+      "description": "User video projects"
+    }
+  }
+}

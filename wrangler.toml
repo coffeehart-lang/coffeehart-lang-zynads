@@ -1,0 +1,50 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "zyncastcfo"
+main = "src/worker.ts"
+compatibility_date = "2024-04-03"
+compatibility_flags = [ "nodejs_compat" ]
+
+routes = [
+  { pattern = "app.zyncastcfo.com", custom_domain = true },
+  { pattern = "zyncastcfo.com", custom_domain = true }
+]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# -------------------------------------------------------------
+# CUSTOM DOMAINS AND ROUTES CONFIGURATION
+# -------------------------------------------------------------
+# Un-comment the line below if you want wrangler to automatically bind this Worker
+# to your custom domain managed in Cloudflare (must be a domain in your Cloudflare account).
+#
+# route = { pattern = "cfo.yourdomain.com/*", custom_domain = true }
+
+# -------------------------------------------------------------
+# ENVIRONMENT VARIABLES & SECRETS
+# -------------------------------------------------------------
+# NOTE: The dashboard UI may show a restriction about static assets.
+# To bypass this, you can set non-sensitive variables below under [vars].
+#
+# For SENSITIVE secrets like GEMINI_API_KEY and GOOGLE_SERVICE_ACCOUNT_KEY, 
+# you should set them securely using the Wrangler CLI in your terminal:
+#
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY
+#
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+

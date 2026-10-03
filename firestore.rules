@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUser(data) {
+      return data.uid is string
+        && data.email is string && data.email.size() <= 200
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && (!('companyName' in data) || (data.companyName is string && data.companyName.size() <= 100))
+        && (!('tier' in data) || data.tier in ['free', 'pro']);
+    }
+
+    function isValidCampaign(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.userId is string && data.userId.size() <= 128;
+    }
+
+    function isValidCreative(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() <= 200
+        && data.userId is string && data.userId.size() <= 128;
+    }
+
+    function isValidProject(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() <= 200
+        && data.userId is string && data.userId.size() <= 128;
+    }
+
+    // User Profile
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().uid == userId;
+      allow update: if isOwner(userId) && isValidUser(incoming()) && incoming().uid == existing().uid;
+      allow delete: if isOwner(userId);
+
+      // Campaigns subcollection
+      match /campaigns/{campaignId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCampaign(incoming()) && incoming().userId == userId;
+        allow update: if isOwner(userId) && isValidCampaign(incoming()) && incoming().userId == userId;
+        allow delete: if isOwner(userId);
+      }
+
+      // Creatives subcollection
+      match /creatives/{creativeId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCreative(incoming()) && incoming().userId == userId;
+        allow update: if isOwner(userId) && isValidCreative(incoming()) && incoming().userId == userId;
+        allow delete: if isOwner(userId);
+      }
+
+      // Projects subcollection
+      match /projects/{projectId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidProject(incoming()) && incoming().userId == userId;
+        allow update: if isOwner(userId) && isValidProject(incoming()) && incoming().userId == userId;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
