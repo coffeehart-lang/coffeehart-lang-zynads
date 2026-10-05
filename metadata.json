@@ -1,6 +1,6 @@
 {
-  "name": "ZynAds",
-  "description": "ZynAds — Small Business Marketing, PR, Teleprompter & Commercial Recording Studio.",
+  "name": "Zyncast CFO",
+  "description": "Zyncast CFO — Executive Financial Intelligence, Cash Flow Forecasting, QuickBooks Ledger Sync, and Business Suite.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

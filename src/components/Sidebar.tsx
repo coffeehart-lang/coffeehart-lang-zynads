@@ -63,7 +63,7 @@ export default function Sidebar({
                 Zyncast<span className="text-teal-400 font-extrabold">CFO</span>
                 <span className="text-[9px] font-mono font-bold bg-teal-950 text-teal-300 border border-teal-800/80 px-1.5 py-0.5 rounded">SUITE</span>
               </h1>
-              <span id="brand-subtitle" className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block mt-0.5">EXECUTIVE CFO & ZYNADS HUB</span>
+              <span id="brand-subtitle" className="text-[10px] text-teal-400 font-mono tracking-wider uppercase block mt-0.5">EXECUTIVE FINANCIAL SUITE</span>
             </div>
           </div>
           {onClose && (
