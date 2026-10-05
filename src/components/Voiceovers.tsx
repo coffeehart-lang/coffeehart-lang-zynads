@@ -55,7 +55,7 @@ interface ElevenLabsVoice {
 const DEFAULT_SCRIPT_TEMPLATES = [
   {
     title: 'High-Converting Direct Response Hook (0-15s)',
-    script: 'Stop wasting thousands on ads that fail to convert. ZenAds and Zyncast deploy multi-scene video commercials and automated ROAS tracking in under 60 seconds. Claim your free trial today!'
+    script: 'Stop wasting thousands on ads that fail to convert. ZynAds and Zyncast deploy multi-scene video commercials and automated ROAS tracking in under 60 seconds. Claim your free trial today!'
   },
   {
     title: 'Viral Problem & Solution Script (15-30s)',
@@ -177,7 +177,7 @@ export default function Voiceovers({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productName: selectedCampaign?.name || 'ZenAds High-ROAS Engine',
+          productName: selectedCampaign?.name || 'ZynAds High-ROAS Engine',
           tone: 'High-Energy Direct Response Voiceover',
           platform: selectedCampaign?.platform || 'Video Commercial',
           objective: selectedCampaign?.objective || 'Conversions'
@@ -190,7 +190,7 @@ export default function Voiceovers({
           setScriptText(data.optimizedCopy.bodyText);
           showNotice("✨ Voiceover script polished for maximum speech rhythm!");
         } else {
-          setScriptText(`Stop wasting ad spend. ${selectedCampaign?.name || 'ZenAds'} scales your conversions automatically with proven 4.8x ROAS. Start your 14-day free trial right now!`);
+          setScriptText(`Stop wasting ad spend. ${selectedCampaign?.name || 'ZynAds'} scales your conversions automatically with proven 4.8x ROAS. Start your 14-day free trial right now!`);
           showNotice("✨ Script enhanced with conversion hooks!");
         }
       }

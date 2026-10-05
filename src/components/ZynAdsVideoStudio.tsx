@@ -70,7 +70,7 @@ const DEFAULT_SCENES: CommercialScene[] = [
     engine: 'Pika Labs 2.1',
     prompt: 'Whimsical pasture where cute animated RAM sticks graze like livestock beside a sleek digital dashboard, vibrant colors, unreal engine 5 render, depth of field',
     visualCue: 'Pasture scene with animated computer hardware icons roaming freely, transitioning seamlessly to real-time marketing analytics.',
-    voiceoverScript: 'Here at ZenAds and Zyncast, all your marketing and ad operations are organic, cage-free, and straight to your revenue line.',
+    voiceoverScript: 'Here at ZynAds and Zyncast, all your marketing and ad operations are organic, cage-free, and straight to your revenue line.',
     overlayText: '🎯 All-In-One AI Commercial Engine',
     badgeText: 'PROBLEM / SOLUTION',
     bgColorGradient: 'from-indigo-950 via-slate-900 to-blue-950',
@@ -84,7 +84,7 @@ const DEFAULT_SCENES: CommercialScene[] = [
     engine: 'Synthesia AI Avatar',
     prompt: 'Professional virtual presenter in modern executive tech loft, speaking naturally to camera with clean holographic UI cards floating beside them',
     visualCue: 'AI spokesperson pointing to real-time ROAS ticker hitting 4.8x with 1-click video commercial launch.',
-    voiceoverScript: 'ZenAds generates your multi-scene video commercial, syncs ElevenLabs voiceovers, and launches cross-channel ads in under 60 seconds.',
+    voiceoverScript: 'ZynAds generates your multi-scene video commercial, syncs ElevenLabs voiceovers, and launches cross-channel ads in under 60 seconds.',
     overlayText: '🚀 4.8x Verified Ad ROAS',
     badgeText: 'SYNTHESIA AVATAR DEMO',
     bgColorGradient: 'from-purple-950 via-slate-900 to-indigo-950',
@@ -96,9 +96,9 @@ const DEFAULT_SCENES: CommercialScene[] = [
     title: 'Scene 4: Call-To-Action & Free Trial',
     durationSec: 4,
     engine: 'RunwayML Gen-3',
-    prompt: 'Sleek premium 3D logo animation of ZenAds with glowing emerald sparks, energetic light burst, clean typography, 4k ultra realistic product endcard',
+    prompt: 'Sleek premium 3D logo animation of ZynAds with glowing emerald sparks, energetic light burst, clean typography, 4k ultra realistic product endcard',
     visualCue: 'Pulsing CTA button with free trial badge, direct URL link, and guarantee seal.',
-    voiceoverScript: 'Check out ZenAds today for your free commercial trial and start scaling your business right now!',
+    voiceoverScript: 'Check out ZynAds today for your free commercial trial and start scaling your business right now!',
     overlayText: '👉 Claim Your Free 14-Day Commercial Trial',
     badgeText: 'FINAL CALL-TO-ACTION',
     bgColorGradient: 'from-teal-950 via-slate-900 to-emerald-950',
@@ -107,14 +107,14 @@ const DEFAULT_SCENES: CommercialScene[] = [
   }
 ];
 
-export default function ZenAdsVideoStudio() {
+export default function ZynAdsVideoStudio() {
   const [scenes, setScenes] = useState<CommercialScene[]>(DEFAULT_SCENES);
   const [currentSceneIdx, setCurrentSceneIdx] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
   const [isGeneratingScript, setIsGeneratingScript] = useState<boolean>(false);
-  const [productTopic, setProductTopic] = useState<string>('ZenAds Commercial Engine & Zyncast Suite');
+  const [productTopic, setProductTopic] = useState<string>('ZynAds Commercial Engine & Zyncast Suite');
   const [commercialTone, setCommercialTone] = useState<string>('High-Energy Direct Response & Whimsical');
   
   // Voiceover Generator Settings
@@ -477,7 +477,7 @@ export default function ZenAdsVideoStudio() {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `ZenAds-Commercial-${exportResolution}-${Date.now()}.webm`;
+        a.download = `ZynAds-Commercial-${exportResolution}-${Date.now()}.webm`;
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
@@ -520,7 +520,7 @@ export default function ZenAdsVideoStudio() {
   };
 
   // FFmpeg Command for terminal / professional pipeline
-  const ffmpegCommand = `ffmpeg -f concat -safe 0 -i scenes_manifest.txt -c:v libx264 -preset slow -crf 18 -b:v ${exportBitrate === '32 Mbps' ? '32M' : '16M'} -c:a aac -b:a 320k -s ${exportResolution === '4k' ? '3840x2160' : exportResolution === '1080p' ? '1920x1080' : '1280x720'} -r ${exportFps} ZenAds_Master_Commercial_${exportResolution}.mp4`;
+  const ffmpegCommand = `ffmpeg -f concat -safe 0 -i scenes_manifest.txt -c:v libx264 -preset slow -crf 18 -b:v ${exportBitrate === '32 Mbps' ? '32M' : '16M'} -c:a aac -b:a 320k -s ${exportResolution === '4k' ? '3840x2160' : exportResolution === '1080p' ? '1920x1080' : '1280x720'} -r ${exportFps} ZynAds_Master_Commercial_${exportResolution}.mp4`;
 
   const handleCopyFfmpeg = () => {
     navigator.clipboard.writeText(ffmpegCommand);
@@ -548,7 +548,7 @@ export default function ZenAdsVideoStudio() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2.5 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-[10px] font-mono font-extrabold uppercase rounded-md shadow-sm">
-                ZenAds Studio Pro
+                ZynAds Studio Pro
               </span>
               <span className="text-xs text-emerald-300 font-mono font-semibold">
                 ● RunwayML • Pika • Synthesia • ElevenLabs

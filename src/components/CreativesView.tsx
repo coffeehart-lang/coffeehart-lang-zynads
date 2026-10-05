@@ -177,7 +177,7 @@ export default function CreativesView() {
   const [userAssets, setUserAssets] = useState<UserAsset[]>([
     {
       id: 'user-asset-1',
-      name: 'Zen Ads Organic Code Farm Pasture Commercial',
+      name: 'Zyn Ads Organic Code Farm Pasture Commercial',
       type: 'video',
       url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
       size: '18.4 MB',

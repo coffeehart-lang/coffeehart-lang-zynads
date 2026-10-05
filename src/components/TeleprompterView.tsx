@@ -47,25 +47,25 @@ import {
 const PRESET_SCRIPTS = [
   {
     id: 'script-farm-1',
-    title: '🎬 30s Zencast & Zen Ads Commercial Showcase',
+    title: '🎬 30s Zencast & Zyn Ads Commercial Showcase',
     duration: '30 seconds',
-    text: `Welcome to Zencast & Zen Ads — the premier platform for AI video commercials and campaign automation!
+    text: `Welcome to Zencast & Zyn Ads — the premier platform for AI video commercials and campaign automation!
 
 Here in our high-definition studio canvas, you can record live webcam commercials with smart teleprompter scrolling and custom brand overlays.
 
 Whether you're presenting a new product or launching an automated ad campaign, Zencast gives you 4K studio quality right in your browser.
 
-Start creating your commercials on Zencast and Zen Ads today!`
+Start creating your commercials on Zencast and Zyn Ads today!`
   },
   {
     id: 'script-farm-2',
-    title: '⚡ 15s Zencast & Zen Ads Quick Pitch',
+    title: '⚡ 15s Zencast & Zyn Ads Quick Pitch',
     duration: '15 seconds',
     text: `Ready to create professional video ads in seconds?
 
-At Zencast & Zen Ads, record live teleprompter videos with custom overlays, real-time audio meters, and instant AI commercial prompts!
+At Zencast & Zyn Ads, record live teleprompter videos with custom overlays, real-time audio meters, and instant AI commercial prompts!
 
-Try Zencast and Zen Ads free today!`
+Try Zencast and Zyn Ads free today!`
   },
   {
     id: 'script-1',
@@ -73,11 +73,11 @@ Try Zencast and Zen Ads free today!`
     duration: '15 seconds',
     text: `Are you tired of overpaying for online advertising?
 
-Discover Zencast and Zen Ads — the all-in-one growth platform built for local businesses.
+Discover Zencast and Zyn Ads — the all-in-one growth platform built for local businesses.
 
 We help you attract loyal customers, optimize ad budgets, and automate your video pipeline in minutes!
 
-Visit Zencast and Zen Ads today to claim your free trial!`
+Visit Zencast and Zyn Ads today to claim your free trial!`
   },
   {
     id: 'script-2',
@@ -85,17 +85,17 @@ Visit Zencast and Zen Ads today to claim your free trial!`
     duration: '30 seconds',
     text: `Big news! We are thrilled to announce our grand opening sale!
 
-For one week only, get up to 40% off all premium services and custom ad campaigns on Zen Ads.
+For one week only, get up to 40% off all premium services and custom ad campaigns on Zyn Ads.
 
 Whether you're starting fresh or upgrading your current strategy, our platform is here to help you scale fast.
 
-Don't wait — launch your first commercial on Zencast and Zen Ads today!`
+Don't wait — launch your first commercial on Zencast and Zyn Ads today!`
   },
   {
     id: 'script-3',
-    title: '60s Creator & Founder Pitch for Zencast & Zen Ads',
+    title: '60s Creator & Founder Pitch for Zencast & Zyn Ads',
     duration: '60 seconds',
-    text: `Hi, I'm the Creator and Founder of Zencast and Zen Ads. When we built this platform, we had one simple goal: make professional advertising accessible to every business owner, without massive studio fees.
+    text: `Hi, I'm the Creator and Founder of Zencast and Zyn Ads. When we built this platform, we had one simple goal: make professional advertising accessible to every business owner, without massive studio fees.
 
 Over the past year, we've helped founders double their customer leads while cutting ad waste dramatically.
 
@@ -103,7 +103,7 @@ Here is how it works: You choose your campaign budget, pick from high-converting
 
 No complicated setup. No hidden fees. Just clean, measurable results delivered straight to your dashboard.
 
-Join thousands of growing businesses today. Visit Zencast and Zen Ads now to launch your campaign!`
+Join thousands of growing businesses today. Visit Zencast and Zyn Ads now to launch your campaign!`
   }
 ];
 
@@ -114,16 +114,16 @@ const PRESET_SCENE_IDEAS = [
     description: 'Presenting Zencast video studio canvas with teleprompter and custom overlays',
     action: 'Demonstrating Zencast Video Engine',
     prop: 'Zencast Teleprompter Studio',
-    badge: 'ZENCAST & ZEN ADS STUDIO',
+    badge: 'ZENCAST & ZYN ADS STUDIO',
     bgId: 'farm-pasture',
-    speakerName: 'Creator & Founder of Zencast & Zen Ads',
-    speakerTitle: 'Creator & Founder of Zencast and Zen Ads',
-    ctaText: 'Visit Zencast & Zen Ads | Next-Gen AI Video Studio',
-    dialogue: `Welcome to Zencast & Zen Ads — the premier platform for AI video commercials!
+    speakerName: 'Creator & Founder of Zencast & Zyn Ads',
+    speakerTitle: 'Creator & Founder of Zencast and Zyn Ads',
+    ctaText: 'Visit Zencast & Zyn Ads | Next-Gen AI Video Studio',
+    dialogue: `Welcome to Zencast & Zyn Ads — the premier platform for AI video commercials!
 
 Here on our studio canvas, you can craft 100% automated or live-recorded video ads with teleprompter controls and custom overlays.
 
-Start creating your commercial on Zencast & Zen Ads today!`
+Start creating your commercial on Zencast & Zyn Ads today!`
   },
   {
     id: 'scene-gpu-demo',
@@ -135,12 +135,12 @@ Start creating your commercial on Zencast & Zen Ads today!`
     bgId: 'cyber-neon',
     speakerName: 'Zencast Commercial Anchor',
     speakerTitle: 'Zencast AI Studio Presenter',
-    ctaText: 'Generate 4K Commercials | Visit Zencast & Zen Ads',
+    ctaText: 'Generate 4K Commercials | Visit Zencast & Zyn Ads',
     dialogue: `Tired of slow rendering times for your commercial ad campaigns?
 
 Zencast delivers instant real-time canvas recording and AI video generation with zero thermal throttling.
 
-Upgrade your video marketing suite today with Zencast and Zen Ads!`
+Upgrade your video marketing suite today with Zencast and Zyn Ads!`
   },
   {
     id: 'scene-executive-desk',
@@ -150,14 +150,14 @@ Upgrade your video marketing suite today with Zencast and Zen Ads!`
     prop: 'Coffee Mug',
     badge: 'ZENCAST FOUNDER SKYLINE',
     bgId: 'office-glass',
-    speakerName: 'Creator & Founder of Zencast & Zen Ads',
-    speakerTitle: 'Creator & Founder of Zencast and Zen Ads',
-    ctaText: 'Claim Your Free 14-Day Growth Trial | Visit Zencast & Zen Ads',
-    dialogue: `Hi, I'm the Creator and Founder of Zencast and Zen Ads. We built this platform with one simple goal: make professional advertising and video creation accessible to everyone.
+    speakerName: 'Creator & Founder of Zencast & Zyn Ads',
+    speakerTitle: 'Creator & Founder of Zencast and Zyn Ads',
+    ctaText: 'Claim Your Free 14-Day Growth Trial | Visit Zencast & Zyn Ads',
+    dialogue: `Hi, I'm the Creator and Founder of Zencast and Zyn Ads. We built this platform with one simple goal: make professional advertising and video creation accessible to everyone.
 
 Our AI teleprompter and video engine handle audience targeting and video presentation seamlessly.
 
-Experience Zencast and Zen Ads today and take your video marketing to the next level!`
+Experience Zencast and Zyn Ads today and take your video marketing to the next level!`
   },
   {
     id: 'scene-cyber-stage',
@@ -167,14 +167,14 @@ Experience Zencast and Zen Ads today and take your video marketing to the next l
     prop: 'Terminal Laptop',
     badge: 'HAND-CRAFTED ZENCAST CODE',
     bgId: 'cyber-neon',
-    speakerName: 'Zen Ads Campaign Director',
-    speakerTitle: 'Zen Ads Strategy Lead',
-    ctaText: 'Deploy Hand-Crafted Software | Visit Zencast & Zen Ads',
-    dialogue: `At Zencast and Zen Ads, our codebase is built with craftsmanship. It's clean, lightning-fast, and running directly in your browser.
+    speakerName: 'Zyn Ads Campaign Director',
+    speakerTitle: 'Zyn Ads Strategy Lead',
+    ctaText: 'Deploy Hand-Crafted Software | Visit Zencast & Zyn Ads',
+    dialogue: `At Zencast and Zyn Ads, our codebase is built with craftsmanship. It's clean, lightning-fast, and running directly in your browser.
 
 No bloat, no unnecessary lag — just pure high-performance video generation.
 
-Try Zencast and Zen Ads today!`
+Try Zencast and Zyn Ads today!`
   }
 ];
 
@@ -258,8 +258,8 @@ export interface PresenterAvatarPreset {
 export const DEFAULT_PRESENTER_AVATARS: PresenterAvatarPreset[] = [
   {
     id: 'presenter-creator',
-    name: 'Creator & Founder of Zencast & Zen Ads',
-    title: 'Creator & Founder of Zencast and Zen Ads',
+    name: 'Creator & Founder of Zencast & Zyn Ads',
+    title: 'Creator & Founder of Zencast and Zyn Ads',
     url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
     badge: 'ZENCAST CREATOR & FOUNDER'
   },
@@ -272,10 +272,10 @@ export const DEFAULT_PRESENTER_AVATARS: PresenterAvatarPreset[] = [
   },
   {
     id: 'presenter-lead',
-    name: 'Zen Ads Campaign Director',
-    title: 'Zen Ads Strategy Lead',
+    name: 'Zyn Ads Campaign Director',
+    title: 'Zyn Ads Strategy Lead',
     url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-    badge: 'ZEN ADS STRATEGY DIRECTOR'
+    badge: 'ZYN ADS STRATEGY DIRECTOR'
   }
 ];
 
@@ -303,7 +303,7 @@ export default function TeleprompterView() {
 
   // Scene & Character Interaction state ("Scene" feature)
   const [sceneDescription, setSceneDescription] = useState<string>(
-    'Presenting Zencast & Zen Ads video studio canvas with teleprompter and custom overlays'
+    'Presenting Zencast & Zyn Ads video studio canvas with teleprompter and custom overlays'
   );
   const [sceneInteraction, setSceneInteraction] = useState<string>(
     'Demonstrating Zencast Video Engine'
@@ -392,11 +392,11 @@ export default function TeleprompterView() {
   const [selectedBg, setSelectedBg] = useState('broadcast-studio');
   const [bgBlur, setBgBlur] = useState(0); // 0-20px
   const [showLowerThird, setShowLowerThird] = useState(true);
-  const [speakerName, setSpeakerName] = useState('Creator & Founder of Zencast & Zen Ads');
-  const [speakerTitle, setSpeakerTitle] = useState('Creator & Founder of Zencast and Zen Ads');
+  const [speakerName, setSpeakerName] = useState('Creator & Founder of Zencast & Zyn Ads');
+  const [speakerTitle, setSpeakerTitle] = useState('Creator & Founder of Zencast and Zyn Ads');
   const [showCtaBanner, setShowCtaBanner] = useState(true);
-  const [ctaText, setCtaText] = useState('🚀 Visit Zencast & Zen Ads | Next-Gen Commercial Video Platform');
-  const [badgeText, setBadgeText] = useState('ZENCAST & ZEN ADS STUDIO');
+  const [ctaText, setCtaText] = useState('🚀 Visit Zencast & Zyn Ads | Next-Gen Commercial Video Platform');
+  const [badgeText, setBadgeText] = useState('ZENCAST & ZYN ADS STUDIO');
 
   // Commercial Duration & Timer Control state
   const [targetDuration, setTargetDuration] = useState<number>(30); // in seconds
@@ -1308,7 +1308,7 @@ export default function TeleprompterView() {
 
         ctx.fillStyle = '#818cf8';
         ctx.font = '12px monospace';
-        ctx.fillText(speakerTitle || 'ZenAds Broadcast Director', 60, 540);
+        ctx.fillText(speakerTitle || 'ZynAds Broadcast Director', 60, 540);
 
         ctx.fillStyle = '#a7f3d0';
         ctx.font = 'bold 11px sans-serif';

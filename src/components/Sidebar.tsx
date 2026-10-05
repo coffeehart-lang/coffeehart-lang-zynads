@@ -63,7 +63,7 @@ export default function Sidebar({
                 Zyncast<span className="text-teal-400 font-extrabold">CFO</span>
                 <span className="text-[9px] font-mono font-bold bg-teal-950 text-teal-300 border border-teal-800/80 px-1.5 py-0.5 rounded">SUITE</span>
               </h1>
-              <span id="brand-subtitle" className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block mt-0.5">EXECUTIVE CFO & ZENADS HUB</span>
+              <span id="brand-subtitle" className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block mt-0.5">EXECUTIVE CFO & ZYNADS HUB</span>
             </div>
           </div>
           {onClose && (
@@ -118,7 +118,7 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Navigation matching ZyncastCFO & ZenAds layout */}
+      {/* Navigation matching ZyncastCFO & ZynAds layout */}
       <nav id="sidebar-navigation" className="flex-1 px-4 py-4 space-y-5">
         {/* SECTION 1: ZYNCAST CFO EXECUTIVE FINANCIAL SUITE */}
         <div className="space-y-1">
@@ -165,10 +165,10 @@ export default function Sidebar({
           })}
         </div>
 
-        {/* SECTION 2: ZENADS AI VIDEO & COMMERCIAL STUDIO */}
+        {/* SECTION 2: ZYNADS AI VIDEO & COMMERCIAL STUDIO */}
         <div className="space-y-1 pt-2 border-t border-slate-900">
           <span className="px-3 text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2 font-mono flex items-center gap-1">
-            <Tv className="w-3 h-3" /> ZENADS MARKETING HUB
+            <Tv className="w-3 h-3" /> ZYNADS MARKETING HUB
           </span>
           {[
             { id: 'video-studio', label: 'AI Video Commercials', icon: Video, badge: 'RUNWAY/PIKA' },

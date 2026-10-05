@@ -26,7 +26,7 @@ import AnalyticsView from './components/AnalyticsView';
 import TeleprompterView from './components/TeleprompterView';
 import BudgetCalculatorView from './components/BudgetCalculatorView';
 import PayrollView from './components/PayrollView';
-import ZenAdsVideoStudio from './components/ZenAdsVideoStudio';
+import ZynAdsVideoStudio from './components/ZynAdsVideoStudio';
 import Voiceovers from './components/Voiceovers';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal, { UserProfile } from './components/AuthModal';
@@ -49,7 +49,7 @@ export default function App() {
         campaignId: 'camp-101',
         campaignName: 'Summer SaaS Retargeting & Direct Sales',
         title: 'High-Converting 15s Direct Response Hook',
-        scriptText: 'Stop wasting thousands on ads that fail to convert. ZenAds and Zyncast deploy multi-scene video commercials and automated ROAS tracking in under 60 seconds.',
+        scriptText: 'Stop wasting thousands on ads that fail to convert. ZynAds and Zyncast deploy multi-scene video commercials and automated ROAS tracking in under 60 seconds.',
         voiceId: '21m00Tcm4TlvDq8ikWAM',
         voiceName: 'Rachel',
         model: 'eleven_multilingual_v2',
@@ -270,7 +270,7 @@ export default function App() {
 
         {/* Mobile Quick Suite Links & Menu Toggle Button */}
         <div className="flex items-center gap-2">
-          {/* Quick Direct Link to ZenAds on Mobile Header */}
+          {/* Quick Direct Link to ZynAds on Mobile Header */}
           <button
             onClick={() => setActiveTab('video-studio')}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
@@ -280,7 +280,7 @@ export default function App() {
             }`}
           >
             <Video className="w-3.5 h-3.5" />
-            <span>ZenAds</span>
+            <span>ZynAds</span>
           </button>
 
           {/* Primary Mobile Menu Drawer Toggle Button */}
@@ -356,7 +356,7 @@ export default function App() {
               <div>
                 <span className="text-[10px] font-mono font-bold text-teal-400 uppercase tracking-wider block">
                   {activeTab.startsWith('video') || activeTab === 'voiceovers' || activeTab === 'creatives' || activeTab === 'campaigns' || activeTab === 'teleprompter'
-                    ? 'ZenAds Commercial & Marketing Hub'
+                    ? 'ZynAds Commercial & Marketing Hub'
                     : 'ZyncastCFO Executive Command Center'}
                 </span>
                 <span className="text-xs font-extrabold text-slate-100">
@@ -436,7 +436,7 @@ export default function App() {
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>🎬 ZenAds</span>
+                <span>🎬 ZynAds</span>
               </button>
 
               <button
@@ -492,9 +492,9 @@ export default function App() {
             />
           )}
 
-          {/* ZenAds Marketing Views */}
+          {/* ZynAds Marketing Views */}
           {activeTab === 'video-studio' && (
-            <ZenAdsVideoStudio />
+            <ZynAdsVideoStudio />
           )}
 
           {activeTab === 'voiceovers' && (
