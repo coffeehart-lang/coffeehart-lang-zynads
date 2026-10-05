@@ -39,7 +39,7 @@ export default function AIFinancialAnalystView() {
     {
       id: 'msg-1',
       sender: 'assistant',
-      text: `### 🏛️ Zencast Multi-Model AI Financial Intelligence Layer Active
+      text: `### 🏛️ Zyncast Multi-Model AI Financial Intelligence Layer Active
 I have ingested your **Executive General Ledger**, **Payroll Runs**, **QuickBooks Sync logs**, and **$495,000 Cash Vault Reserves**.
 
 Here is our live financial telemetry snapshot:
@@ -82,9 +82,9 @@ How can I assist your executive decision-making today? You can select a quick pr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productName: 'Zencast CFO Financial Ecosystem',
+          productName: 'Zyncast CFO Financial Ecosystem',
           objective: 'CFO Deep Financial Analysis & Anomaly Detection',
-          userPrompt: `You are the lead AI Financial Analyst and Chief Financial Officer intelligence layer for ZencastCFO. Financial data: Monthly Revenue=$289k, Cash Vault=$495k, Payroll=$58k/mo, COGS=$89k/mo, EBITDA=$159k, Net Profit=$142k. Query: ${textToSend}`
+          userPrompt: `You are the lead AI Financial Analyst and Chief Financial Officer intelligence layer for ZyncastCFO. Financial data: Monthly Revenue=$289k, Cash Vault=$495k, Payroll=$58k/mo, COGS=$89k/mo, EBITDA=$159k, Net Profit=$142k. Query: ${textToSend}`
         })
       });
 
@@ -103,7 +103,7 @@ How can I assist your executive decision-making today? You can select a quick pr
         sender: 'assistant',
         text: responseText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sourceModels: ['Gemini 2.5 Flash', 'Zencast Anomaly Engine'],
+        sourceModels: ['Gemini 2.5 Flash', 'Zyncast Anomaly Engine'],
         anomaliesDetected: false
       };
 
@@ -217,7 +217,7 @@ How can I assist your executive decision-making today? You can select a quick pr
             >
               <div className="flex items-center gap-2 px-1">
                 <span className="text-[10px] font-mono font-bold text-slate-400">
-                  {msg.sender === 'user' ? 'You (Executive)' : 'Zencast AI Analyst'}
+                  {msg.sender === 'user' ? 'You (Executive)' : 'Zyncast AI Analyst'}
                 </span>
                 <span className="text-[10px] text-slate-400">{msg.timestamp}</span>
               </div>

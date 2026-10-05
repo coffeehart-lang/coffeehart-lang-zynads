@@ -32,7 +32,7 @@ export default function NodeEditorView() {
       status: 'completed',
       x: 40,
       y: 60,
-      configText: 'Zencast CFO Organic Code Pasture Commercial script'
+      configText: 'Zyncast CFO Organic Code Pasture Commercial script'
     },
     {
       id: 'node-2',
@@ -148,7 +148,7 @@ export default function NodeEditorView() {
       {/* Visual Canvas Graph Workspace */}
       <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-white min-h-[480px] relative overflow-hidden shadow-2xl space-y-4">
         <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-slate-800/80 pb-3">
-          <span>WORKFLOW GRAPH: ZENCAST COMMERCIAL SYNTHESIS</span>
+          <span>WORKFLOW GRAPH: ZYNCAST COMMERCIAL SYNTHESIS</span>
           <span className="text-emerald-400 font-bold">● ALL 5 NODES SYNCED</span>
         </div>
 

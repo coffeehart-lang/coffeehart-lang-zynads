@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2026 Coffeehart / ZynAds / Zencast. All Rights Reserved.
+ * Copyright (c) 2026 Coffeehart / ZynAds / Zyncast. All Rights Reserved.
  * Proprietary and Confidential.
  * 
  * Unauthorized copying, distribution, or reproduction of this software via any medium
@@ -13,7 +13,7 @@ import { AdCampaign, SavedVoiceover } from './types';
 import { INITIAL_CAMPAIGNS } from './data';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
-import ZencastLandingView from './components/ZencastLandingView';
+import ZyncastLandingView from './components/ZyncastLandingView';
 import CashFlowForecasterView from './components/CashFlowForecasterView';
 import ScenarioModelerView from './components/ScenarioModelerView';
 import RunwayTrackerView from './components/RunwayTrackerView';
@@ -455,7 +455,7 @@ export default function App() {
 
           {/* Core App View Routing */}
           {activeTab === 'dashboard' && (
-            <ZencastLandingView 
+            <ZyncastLandingView 
               setActiveTab={setActiveTab}
               isPrivacyMode={isPrivacyMode}
             />

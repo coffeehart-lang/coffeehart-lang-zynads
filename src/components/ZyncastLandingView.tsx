@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
-interface ZencastLandingViewProps {
+interface ZyncastLandingViewProps {
   setActiveTab: (tab: string) => void;
   isPrivacyMode: boolean;
 }
@@ -43,7 +43,7 @@ const RECENT_GL_TRANSACTIONS = [
   { id: 'GL-9825', date: '2026-03-26', account: 'Hardware CapEx #1510', memo: 'Dual-Audit Vault Drop Safe Capital Asset', debit: '$12,400.00', credit: '-', status: 'Audit Ready' },
 ];
 
-export default function ZencastLandingView({ setActiveTab, isPrivacyMode }: ZencastLandingViewProps) {
+export default function ZyncastLandingView({ setActiveTab, isPrivacyMode }: ZyncastLandingViewProps) {
   const [timeRange, setTimeRange] = useState<'6m' | '1y' | 'YTD'>('6m');
 
   const formatCurrency = (amount: number) => {
@@ -69,7 +69,7 @@ export default function ZencastLandingView({ setActiveTab, isPrivacyMode }: Zenc
               </span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
-              Zencast<span className="text-teal-400">CFO</span> Executive Headquarters
+              Zyncast<span className="text-teal-400">CFO</span> Executive Headquarters
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
               The unified financial cockpit: Cash Flow Forecaster, "What-If" Scenario Modeler, Bookkeeping & QuickBooks Sync, Burn Rate Tracker, and Multi-Model AI Financial Analyst.
