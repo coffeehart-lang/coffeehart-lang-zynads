@@ -14,6 +14,7 @@ import { INITIAL_CAMPAIGNS } from './data';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
 import ZyncastLandingView from './components/ZyncastLandingView';
+import FinancialMilestoneTimeline from './components/FinancialMilestoneTimeline';
 import CashFlowForecasterView from './components/CashFlowForecasterView';
 import ScenarioModelerView from './components/ScenarioModelerView';
 import RunwayTrackerView from './components/RunwayTrackerView';
@@ -459,6 +460,12 @@ export default function App() {
               setActiveTab={setActiveTab}
               isPrivacyMode={isPrivacyMode}
             />
+          )}
+
+          {activeTab === 'milestones-timeline' && (
+            <div className="space-y-6 max-w-7xl mx-auto pb-16">
+              <FinancialMilestoneTimeline />
+            </div>
           )}
 
           {activeTab === 'cash-flow-forecaster' && (

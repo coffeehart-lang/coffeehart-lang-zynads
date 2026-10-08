@@ -22,7 +22,8 @@ import {
   Mic,
   Sliders,
   Flame,
-  Bot
+  Bot,
+  Calendar
 } from 'lucide-react';
 import { UserProfile } from './AuthModal';
 
@@ -127,6 +128,7 @@ export default function Sidebar({
           </span>
           {[
             { id: 'dashboard', label: 'Executive Metrics Dashboard', icon: LayoutDashboard, badge: 'CFO' },
+            { id: 'milestones-timeline', label: 'Milestones & Cash Cycles', icon: Calendar, badge: 'TIMELINE' },
             { id: 'cash-flow-forecaster', label: 'Cash Flow Forecaster', icon: LineChart, badge: 'PROJECTION' },
             { id: 'scenario-modeler', label: '"What-If" Scenario Modeler', icon: Sliders, badge: 'SIMULATE' },
             { id: 'payroll', label: 'Bookkeeping & Ledger Sync', icon: FileSpreadsheet, badge: 'QBO SYNC' },

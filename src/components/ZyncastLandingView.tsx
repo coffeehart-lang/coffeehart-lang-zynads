@@ -20,6 +20,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import FinancialMilestoneTimeline from './FinancialMilestoneTimeline';
 
 interface ZyncastLandingViewProps {
   setActiveTab: (tab: string) => void;
@@ -249,6 +250,9 @@ export default function ZyncastLandingView({ setActiveTab, isPrivacyMode }: Zync
           <span className="text-[10px] text-slate-500 font-medium mt-1 block font-mono">Zero Errors Found</span>
         </div>
       </div>
+
+      {/* 📅 STRATEGIC FINANCIAL MILESTONES & CAMPAIGN TIMELINE */}
+      <FinancialMilestoneTimeline />
 
       {/* 📈 CASH FLOW & FINANCIAL REVENUE TELEMETRY CHART */}
       <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
